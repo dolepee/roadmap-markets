@@ -90,6 +90,31 @@ const CHECKLIST: Array<{ key: keyof Checklist; label: string }> = [
 
 const TX_STEPS = ["Submitted", "Proposing", "Accepted", "Finalized"];
 
+const STATUS_MAP: Record<number, TxStatus> = {
+  0: "PENDING",
+  1: "PROPOSING",
+  2: "COMMITTING",
+  3: "REVEALING",
+  4: "ACCEPTED",
+  5: "FINALIZED",
+  6: "UNDETERMINED",
+  7: "CANCELED",
+  8: "FAILED",
+};
+
+function resolveStatus(tx: Record<string, unknown>): TxStatus {
+  const name = tx.statusName ?? tx.status_name;
+  if (typeof name === "string" && name.length > 2) return name.toUpperCase() as TxStatus;
+  const code = tx.status;
+  if (typeof code === "number") return STATUS_MAP[code] ?? "PENDING";
+  if (typeof code === "string") {
+    const n = Number(code);
+    if (Number.isFinite(n) && STATUS_MAP[n]) return STATUS_MAP[n];
+    return code.toUpperCase() as TxStatus;
+  }
+  return "PENDING";
+}
+
 const CONTRACT = (process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ??
   "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
@@ -430,9 +455,7 @@ function MarketDetail({
         });
         for (let i = 0; i < 40; i++) {
           const tx = await client.getTransaction({ hash: hash as never });
-          const st = ((tx as Record<string, unknown>).status ??
-            (tx as Record<string, unknown>).statusName ??
-            "PENDING") as TxStatus;
+          const st = resolveStatus(tx as Record<string, unknown>);
           setTxState({ action: label, hash, status: st, message: `Status: ${st}` });
           if (
             ["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)
@@ -927,9 +950,7 @@ function CreateMarketModal({
         });
         for (let i = 0; i < 40; i++) {
           const tx = await client.getTransaction({ hash: hash as never });
-          const st = ((tx as Record<string, unknown>).status ??
-            (tx as Record<string, unknown>).statusName ??
-            "PENDING") as TxStatus;
+          const st = resolveStatus(tx as Record<string, unknown>);
           setTxState({
             action: "Create Market",
             hash,
