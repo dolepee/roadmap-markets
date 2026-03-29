@@ -16,15 +16,17 @@ Current build status:
 Current MVP shape:
 
 - one market type: `ship_by_date`
-- binary `YES / NO` positions with internal credit accounting for the first Studio loop
+- binary `YES / NO` positions with MetaMask wallet connection via `genlayer-js` SDK
 - GenLayer resolves milestone delivery from live evidence
 - winners claim from a simple pari-mutuel pool
+- frontend uses `genlayer-js` client-side SDK — users sign transactions directly with their wallet
 
-Credit note:
+Wallet integration:
 
-- the MVP uses internal credits for position accounting because the current Studio/CLI path does not expose payable writes cleanly
-- the pari-mutuel math, fee accounting, and proportional payout logic are live and verified
-- native-value settlement is a deployment module, not an architecture rewrite
+- frontend uses `genlayer-js` (v0.27.3) built on viem for client-side contract interaction
+- MetaMask connects to GenLayer Studio chain (chain ID 61999)
+- reads work without a wallet; writes require wallet connection
+- each user's positions are attributed to their own wallet address via `gl.message.sender_address`
 
 Core contract:
 
@@ -81,6 +83,5 @@ Backend hardening proof:
 
 Current limitation:
 
-- positions use internal credits for now because the current CLI path does not expose payable writes cleanly
-- native-value settlement is a follow-up slice after the contract loop is proven live
 - deadline text is stored and evaluated by the resolver prompt, but not enforced as an onchain timestamp gate yet
+- positions use credit amounts (not native GEN token value) — native-value settlement is a follow-up after Studio supports payable writes

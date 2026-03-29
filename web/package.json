@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@next/swc-linux-x64-gnu": "^15.5.14",
+    "genlayer-js": "^0.27.3",
     "next": "^15.5.14",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useWallet } from "../../lib/wallet-context";
+import { WalletButton } from "./wallet-button";
 
 type TxStatus =
   | "PENDING"
@@ -13,13 +15,6 @@ type TxStatus =
   | "UNDETERMINED"
   | "FAILED"
   | "idle";
-
-type TransactionRecord = {
-  hash: string;
-  status: TxStatus;
-  result?: string;
-  rounds?: string;
-};
 
 type Checklist = {
   product_live: boolean;
@@ -98,72 +93,13 @@ const checklistLabels: Array<{ key: keyof Checklist; title: string; description:
 
 const txPhases = ["Submitted", "Proposing", "Accepted", "Finalized"];
 
-const contractAddress =
-  process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000";
+const contractAddress = (
+  process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000"
+) as `0x${string}`;
 
-async function postJson<T>(url: string, payload: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const json = (await response.json()) as T & { ok?: boolean; error?: string };
-  if (!response.ok || (typeof json === "object" && json && "ok" in json && json.ok === false)) {
-    const detail =
-      typeof json === "object" && json && "error" in json ? String(json.error) : "Request failed";
-    throw new Error(detail);
-  }
-  return json;
-}
-
-async function readMarket(functionName: string, args: unknown[]) {
-  const response = await postJson<{ result: unknown }>("/api/genlayer/read", { functionName, args });
-  return response.result;
-}
-
-async function readMarketWithRetry(functionName: string, args: unknown[], retries = 3, delayMs = 1500) {
-  let lastError: Error | null = null;
-  for (let attempt = 0; attempt < retries; attempt += 1) {
-    try {
-      return await readMarket(functionName, args);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error("Unknown read error");
-      if (attempt < retries - 1) {
-        await sleep(delayMs);
-      }
-    }
-  }
-  throw lastError || new Error("Read failed");
-}
-
-async function writeMarket(functionName: string, args: unknown[]) {
-  const response = await postJson<{ tx: unknown }>("/api/genlayer/write", { functionName, args });
-  if (typeof response.tx === "string") {
-    return response.tx;
-  }
-  if (typeof response.tx === "object" && response.tx && "hash" in response.tx) {
-    return String((response.tx as { hash: string }).hash);
-  }
-  throw new Error("Write route did not return a transaction hash");
-}
-
-async function getMarketTransaction(hash: string): Promise<TransactionRecord> {
-  const response = await fetch(`/api/genlayer/tx/${hash}`);
-  const json = (await response.json()) as {
-    ok?: boolean;
-    error?: string;
-    transaction?: TransactionRecord;
-  };
-  if (!response.ok || json.ok === false || !json.transaction) {
-    throw new Error(json.error || "Transaction lookup failed");
-  }
-  return json.transaction;
-}
-
-function toNumber(value: unknown) {
-  if (typeof value === "number") {
-    return value;
-  }
+function toNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "bigint") return Number(value);
   if (typeof value === "string") {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -171,8 +107,22 @@ function toNumber(value: unknown) {
   return 0;
 }
 
+function mapToObject(value: unknown): Record<string, unknown> {
+  if (value instanceof Map) {
+    const obj: Record<string, unknown> = {};
+    for (const [k, v] of value.entries()) {
+      obj[String(k)] = v instanceof Map ? mapToObject(v) : v;
+    }
+    return obj;
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
 function normalizeChecklist(value: unknown): Checklist {
-  const source = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const source = mapToObject(value);
   return {
     product_live: Boolean(source.product_live),
     feature_usable: Boolean(source.feature_usable),
@@ -182,35 +132,50 @@ function normalizeChecklist(value: unknown): Checklist {
 }
 
 function normalizeMarket(value: unknown): MarketRecord {
-  const source = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const source = mapToObject(value);
+  // If the value was a JSON string from the contract, parse it
+  if (typeof value === "string") {
+    try {
+      return normalizeMarket(JSON.parse(value));
+    } catch {
+      // not JSON, continue with empty
+    }
+  }
   return {
-    market_id: String(source.market_id || ""),
-    question: String(source.question || ""),
-    project_name: String(source.project_name || ""),
-    milestone_text: String(source.milestone_text || ""),
-    deadline_text: String(source.deadline_text || ""),
-    product_url: String(source.product_url || ""),
-    docs_url: String(source.docs_url || ""),
-    repo_url: String(source.repo_url || ""),
-    chain_url: String(source.chain_url || ""),
+    market_id: String(source.market_id ?? ""),
+    question: String(source.question ?? ""),
+    project_name: String(source.project_name ?? ""),
+    milestone_text: String(source.milestone_text ?? ""),
+    deadline_text: String(source.deadline_text ?? ""),
+    product_url: String(source.product_url ?? ""),
+    docs_url: String(source.docs_url ?? ""),
+    repo_url: String(source.repo_url ?? ""),
+    chain_url: String(source.chain_url ?? ""),
     fee_bps: toNumber(source.fee_bps),
     yes_pool: toNumber(source.yes_pool),
     no_pool: toNumber(source.no_pool),
     resolved: Boolean(source.resolved),
-    resolution: String(source.resolution || ""),
+    resolution: String(source.resolution ?? ""),
     checklist: normalizeChecklist(source.checklist),
-    notes: String(source.notes || ""),
-    creator: String(source.creator || ""),
-    resolved_by: String(source.resolved_by || ""),
+    notes: String(source.notes ?? ""),
+    creator: String(source.creator ?? ""),
+    resolved_by: String(source.resolved_by ?? ""),
     fee_amount: toNumber(source.fee_amount)
   };
 }
 
 function normalizePosition(value: unknown): PositionRecord {
-  const source = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
+  const source = mapToObject(value);
+  if (typeof value === "string") {
+    try {
+      return normalizePosition(JSON.parse(value));
+    } catch {
+      // not JSON
+    }
+  }
   return {
-    market_id: String(source.market_id || ""),
-    trader: String(source.trader || ""),
+    market_id: String(source.market_id ?? ""),
+    trader: String(source.trader ?? ""),
     yes_amount: toNumber(source.yes_amount),
     no_amount: toNumber(source.no_amount),
     claimed: Boolean(source.claimed)
@@ -230,67 +195,36 @@ function formatCredits(value: number) {
 }
 
 function marketStatusLabel(market: MarketRecord) {
-  if (!market.resolved) {
-    return "Open";
-  }
+  if (!market.resolved) return "Open";
   return market.resolution === "YES" ? "Resolved YES" : "Resolved NO";
 }
 
 function marketStatusTone(market: MarketRecord) {
-  if (!market.resolved) {
-    return "pending";
-  }
+  if (!market.resolved) return "pending";
   return market.resolution === "YES" ? "yes" : "no";
 }
 
 function trackerStage(status: TxStatus) {
-  if (status === "FAILED" || status === "CANCELED" || status === "UNDETERMINED") {
-    return -1;
-  }
-  if (status === "FINALIZED") {
-    return 3;
-  }
-  if (status === "ACCEPTED") {
-    return 2;
-  }
-  if (status === "COMMITTING" || status === "REVEALING" || status === "PROPOSING" || status === "PENDING") {
+  if (status === "FAILED" || status === "CANCELED" || status === "UNDETERMINED") return -1;
+  if (status === "FINALIZED") return 3;
+  if (status === "ACCEPTED") return 2;
+  if (
+    status === "COMMITTING" ||
+    status === "REVEALING" ||
+    status === "PROPOSING" ||
+    status === "PENDING"
+  )
     return 1;
-  }
   return 0;
 }
 
 function shortHash(value: string) {
-  if (!value) {
-    return "";
-  }
+  if (!value) return "";
   return `${value.slice(0, 10)}...${value.slice(-8)}`;
 }
 
 function sleep(delayMs: number) {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
-}
-
-async function pollTransaction(
-  hash: string,
-  onUpdate: (transaction: TransactionRecord) => void
-): Promise<TransactionRecord> {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    const transaction = await getMarketTransaction(hash);
-    onUpdate(transaction);
-
-    if (
-      transaction.status === "FINALIZED" ||
-      transaction.status === "FAILED" ||
-      transaction.status === "CANCELED" ||
-      transaction.status === "UNDETERMINED"
-    ) {
-      return transaction;
-    }
-
-    await sleep(3000);
-  }
-
-  throw new Error("Transaction status did not reach FINALIZED in time");
 }
 
 function ChecklistGrid({ checklist, compact = false }: { checklist: Checklist; compact?: boolean }) {
@@ -300,7 +234,9 @@ function ChecklistGrid({ checklist, compact = false }: { checklist: Checklist; c
         const passed = checklist[item.key];
         return (
           <div className={compact ? "checkCell compact" : "checkCell"} key={item.key}>
-            <span className={passed ? "checkState yes" : "checkState no"}>{passed ? "PASS" : "MISS"}</span>
+            <span className={passed ? "checkState yes" : "checkState no"}>
+              {passed ? "PASS" : "MISS"}
+            </span>
             <div>
               <strong>{item.title}</strong>
               <p>{item.description}</p>
@@ -319,9 +255,7 @@ function TransactionTracker({
   tx: TxPanelState | null;
   onCopy: (hash: string) => void;
 }) {
-  if (!tx) {
-    return null;
-  }
+  if (!tx) return null;
 
   const stage = trackerStage(tx.status);
 
@@ -332,7 +266,9 @@ function TransactionTracker({
           <p className="cardLabel">Transaction</p>
           <h3>{tx.action}</h3>
         </div>
-        <span className={`pill ${stage < 0 ? "no" : stage === 3 ? "yes" : "pending"}`}>{tx.status}</span>
+        <span className={`pill ${stage < 0 ? "no" : stage === 3 ? "yes" : "pending"}`}>
+          {tx.status}
+        </span>
       </div>
 
       <div className="trackerRow">
@@ -374,6 +310,8 @@ function TransactionTracker({
 }
 
 export function MarketAdmin() {
+  const { address, client } = useWallet();
+
   const [markets, setMarkets] = useState<MarketRecord[]>([]);
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [boardError, setBoardError] = useState("");
@@ -381,28 +319,69 @@ export function MarketAdmin() {
   const [positionError, setPositionError] = useState("");
   const [positionState, setPositionState] = useState<PositionState | null>(null);
   const [isLoadingPosition, setIsLoadingPosition] = useState(false);
-  const [traderAddress, setTraderAddress] = useState("0xc02a8b180831F80D7E925908c323cc304c9B97e1");
+  const [traderAddress, setTraderAddress] = useState("");
   const [amount, setAmount] = useState("100");
   const [txState, setTxState] = useState<TxPanelState | null>(null);
   const [copyMessage, setCopyMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Auto-fill trader address when wallet connects
+  useEffect(() => {
+    if (address) {
+      setTraderAddress(address);
+    }
+  }, [address]);
+
+  async function sdkRead(functionName: string, args: unknown[]) {
+    const result = await client.readContract({
+      address: contractAddress,
+      functionName,
+      args: args as Parameters<typeof client.readContract>[0]["args"],
+    });
+    return result;
+  }
+
+  async function sdkReadWithRetry(functionName: string, args: unknown[], retries = 3, delayMs = 1500) {
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < retries; attempt += 1) {
+      try {
+        return await sdkRead(functionName, args);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Unknown read error");
+        if (attempt < retries - 1) await sleep(delayMs);
+      }
+    }
+    throw lastError || new Error("Read failed");
+  }
+
   async function refreshMarkets() {
     setIsLoadingBoard(true);
     setBoardError("");
     try {
-      const idsResult = await readMarketWithRetry("get_market_ids", []);
-      const ids = Array.isArray(idsResult) ? idsResult.map((item) => String(item)) : [];
+      const idsResult = await sdkReadWithRetry("get_market_ids", []);
+      let ids: string[];
+      if (idsResult instanceof Map) {
+        ids = Array.from(idsResult.values()).map(String);
+      } else if (Array.isArray(idsResult)) {
+        ids = idsResult.map(String);
+      } else if (typeof idsResult === "string") {
+        try {
+          const parsed = JSON.parse(idsResult);
+          ids = Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch {
+          ids = [];
+        }
+      } else {
+        ids = [];
+      }
       const nextMarkets = sortMarkets(
         await Promise.all(
-          ids.map(async (marketId) => normalizeMarket(await readMarketWithRetry("get_market", [marketId])))
+          ids.map(async (marketId) => normalizeMarket(await sdkReadWithRetry("get_market", [marketId])))
         )
       );
       setMarkets(nextMarkets);
       setSelectedMarketId((current) => {
-        if (current && nextMarkets.some((market) => market.market_id === current)) {
-          return current;
-        }
+        if (current && nextMarkets.some((m) => m.market_id === current)) return current;
         return nextMarkets[0]?.market_id || "";
       });
     } catch (error) {
@@ -415,6 +394,7 @@ export function MarketAdmin() {
 
   useEffect(() => {
     void refreshMarkets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -422,7 +402,7 @@ export function MarketAdmin() {
     setPositionError("");
   }, [selectedMarketId]);
 
-  const selectedMarket = markets.find((market) => market.market_id === selectedMarketId) || null;
+  const selectedMarket = markets.find((m) => m.market_id === selectedMarketId) || null;
 
   function copyHash(hash: string) {
     if (typeof navigator === "undefined" || !navigator.clipboard) {
@@ -447,8 +427,8 @@ export function MarketAdmin() {
 
     try {
       const [positionResult, quoteResult] = await Promise.all([
-        readMarketWithRetry("get_position", [selectedMarket.market_id, traderAddress.trim()]),
-        readMarketWithRetry("quote_claim", [selectedMarket.market_id, traderAddress.trim()])
+        sdkReadWithRetry("get_position", [selectedMarket.market_id, traderAddress.trim()]),
+        sdkReadWithRetry("quote_claim", [selectedMarket.market_id, traderAddress.trim()])
       ]);
       setPositionState({
         record: normalizePosition(positionResult),
@@ -464,6 +444,8 @@ export function MarketAdmin() {
   }
 
   function submitWrite(functionName: string, args: unknown[], actionLabel: string) {
+    if (!address) return;
+
     startTransition(async () => {
       let submittedHash = "";
       setCopyMessage("");
@@ -475,50 +457,61 @@ export function MarketAdmin() {
       });
 
       try {
-        const hash = await writeMarket(functionName, args);
-        submittedHash = hash;
+        const txHash = await client.writeContract({
+          address: contractAddress,
+          functionName,
+          args: args as Parameters<typeof client.writeContract>[0]["args"],
+          value: BigInt(0),
+        });
+        submittedHash = txHash;
         setTxState({
           action: actionLabel,
-          hash,
+          hash: txHash,
           status: "PENDING",
-          message: "Submitted to GenLayer Studio. Waiting for validator progress..."
+          message: "Submitted to GenLayer. Waiting for validator progress..."
         });
 
-        const finalized = await pollTransaction(hash, (transaction) => {
-          setTxState({
-            action: actionLabel,
-            hash,
-            status: transaction.status,
-            result: transaction.result,
-            rounds: transaction.rounds,
-            message: `Current status: ${transaction.status}`
-          });
-        });
+        // Poll for finalization
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          const tx = await client.getTransaction({ hash: txHash });
+          const status = (tx as unknown as Record<string, unknown>).status as TxStatus
+            ?? (tx as unknown as Record<string, unknown>).statusName as TxStatus
+            ?? "PENDING";
 
-        if (
-          finalized.status === "FAILED" ||
-          finalized.status === "CANCELED" ||
-          finalized.status === "UNDETERMINED"
-        ) {
           setTxState({
             action: actionLabel,
-            hash,
-            status: finalized.status,
-            result: finalized.result,
-            rounds: finalized.rounds,
-            message: `Transaction ended in ${finalized.status}.`,
-            error: finalized.result || "The transaction did not finalize successfully."
+            hash: txHash,
+            status,
+            message: `Current status: ${status}`
           });
-          return;
+
+          if (
+            status === "FINALIZED" ||
+            status === "FAILED" ||
+            status === "CANCELED" ||
+            status === "UNDETERMINED"
+          ) {
+            if (status !== "FINALIZED") {
+              setTxState({
+                action: actionLabel,
+                hash: txHash,
+                status,
+                message: `Transaction ended in ${status}.`,
+                error: `The transaction did not finalize successfully.`
+              });
+              return;
+            }
+            break;
+          }
+
+          await sleep(3000);
         }
 
         setTxState({
           action: actionLabel,
-          hash,
-          status: finalized.status,
-          result: finalized.result,
-          rounds: finalized.rounds,
-          message: "Finalized on GenLayer Studio."
+          hash: txHash,
+          status: "FINALIZED",
+          message: "Finalized on GenLayer."
         });
 
         await refreshMarkets();
@@ -545,15 +538,17 @@ export function MarketAdmin() {
           <p className="cardLabel">Live Market Board</p>
           <h2>Markets resolved by live public evidence</h2>
         </div>
-        <div className="contractMeta">
-          <span>Contract</span>
-          <code>{shortHash(contractAddress)}</code>
+        <div className="headerRight">
+          <WalletButton />
+          <div className="contractMeta">
+            <span>Contract</span>
+            <code>{shortHash(contractAddress)}</code>
+          </div>
         </div>
       </div>
 
       <p className="sectionNote sectionIntro">
-        This board reads live state from the deployed contract. Resolved markets show the exact
-        checklist booleans that drove settlement.
+        Connect your wallet to take positions and claim winnings. Reads work without a wallet.
       </p>
 
       {boardError ? <div className="errorBanner">{boardError}</div> : null}
@@ -563,16 +558,24 @@ export function MarketAdmin() {
         <section className="card marketBoardPanel">
           <div className="listHeader">
             <h3>Markets</h3>
-            <span className="tiny">{isLoadingBoard ? "Refreshing..." : `${markets.length} live markets`}</span>
+            <span className="tiny">
+              {isLoadingBoard ? "Refreshing..." : `${markets.length} live markets`}
+            </span>
           </div>
 
           <div className="marketListBoard">
             {isLoadingBoard ? <div className="emptyState">Loading live market state...</div> : null}
-            {!isLoadingBoard && !markets.length ? <div className="emptyState">No live markets found.</div> : null}
+            {!isLoadingBoard && !markets.length ? (
+              <div className="emptyState">No live markets found.</div>
+            ) : null}
 
             {markets.map((market) => (
               <button
-                className={market.market_id === selectedMarketId ? "marketCardButton isSelected" : "marketCardButton"}
+                className={
+                  market.market_id === selectedMarketId
+                    ? "marketCardButton isSelected"
+                    : "marketCardButton"
+                }
                 key={market.market_id}
                 onClick={() => setSelectedMarketId(market.market_id)}
                 type="button"
@@ -582,7 +585,9 @@ export function MarketAdmin() {
                     <p className="marketProject">{market.project_name}</p>
                     <h3>{market.question}</h3>
                   </div>
-                  <span className={`pill ${marketStatusTone(market)}`}>{marketStatusLabel(market)}</span>
+                  <span className={`pill ${marketStatusTone(market)}`}>
+                    {marketStatusLabel(market)}
+                  </span>
                 </div>
 
                 <div className="marketCardStats">
@@ -603,7 +608,9 @@ export function MarketAdmin() {
                 {market.resolved ? (
                   <ChecklistGrid checklist={market.checklist} compact />
                 ) : (
-                  <p className="tiny pendingCopy">Open market. Resolution checklist will populate after settlement.</p>
+                  <p className="tiny pendingCopy">
+                    Open market. Resolution checklist will populate after settlement.
+                  </p>
                 )}
               </button>
             ))}
@@ -620,7 +627,9 @@ export function MarketAdmin() {
                   <p className="cardLabel">{selectedMarket.project_name}</p>
                   <h2>{selectedMarket.question}</h2>
                 </div>
-                <span className={`pill ${marketStatusTone(selectedMarket)}`}>{marketStatusLabel(selectedMarket)}</span>
+                <span className={`pill ${marketStatusTone(selectedMarket)}`}>
+                  {marketStatusLabel(selectedMarket)}
+                </span>
               </div>
 
               <div className="detailMetaGrid">
@@ -653,22 +662,44 @@ export function MarketAdmin() {
               <section className="subsection">
                 <div className="subsectionHeader">
                   <h3>Evidence URLs</h3>
-                  <p className="tiny">These are the live sources the contract reads at resolution time.</p>
+                  <p className="tiny">
+                    These are the live sources the contract reads at resolution time.
+                  </p>
                 </div>
                 <div className="linkGrid">
-                  <a className="evidenceLink" href={selectedMarket.product_url} rel="noreferrer" target="_blank">
+                  <a
+                    className="evidenceLink"
+                    href={selectedMarket.product_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
                     <span>Product</span>
                     <strong>{selectedMarket.product_url}</strong>
                   </a>
-                  <a className="evidenceLink" href={selectedMarket.docs_url} rel="noreferrer" target="_blank">
+                  <a
+                    className="evidenceLink"
+                    href={selectedMarket.docs_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
                     <span>Docs</span>
                     <strong>{selectedMarket.docs_url}</strong>
                   </a>
-                  <a className="evidenceLink" href={selectedMarket.repo_url} rel="noreferrer" target="_blank">
+                  <a
+                    className="evidenceLink"
+                    href={selectedMarket.repo_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
                     <span>Repo</span>
                     <strong>{selectedMarket.repo_url}</strong>
                   </a>
-                  <a className="evidenceLink" href={selectedMarket.chain_url} rel="noreferrer" target="_blank">
+                  <a
+                    className="evidenceLink"
+                    href={selectedMarket.chain_url}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
                     <span>Chain</span>
                     <strong>{selectedMarket.chain_url}</strong>
                   </a>
@@ -686,7 +717,9 @@ export function MarketAdmin() {
                 {selectedMarket.resolved ? (
                   <>
                     <ChecklistGrid checklist={selectedMarket.checklist} />
-                    {selectedMarket.notes ? <p className="resolutionNotes">{selectedMarket.notes}</p> : null}
+                    {selectedMarket.notes ? (
+                      <p className="resolutionNotes">{selectedMarket.notes}</p>
+                    ) : null}
                   </>
                 ) : (
                   <div className="emptyState subtle">
@@ -698,7 +731,9 @@ export function MarketAdmin() {
               <section className="subsection">
                 <div className="subsectionHeader">
                   <h3>Trader position</h3>
-                  <p className="tiny">Read live balances and claimable payout for any address.</p>
+                  <p className="tiny">
+                    Read live balances and claimable payout for any address.
+                  </p>
                 </div>
                 <div className="formRow">
                   <input
@@ -706,7 +741,12 @@ export function MarketAdmin() {
                     placeholder="0x..."
                     value={traderAddress}
                   />
-                  <button className="secondaryButton" disabled={isLoadingPosition || isPending} onClick={() => void loadPosition()} type="button">
+                  <button
+                    className="secondaryButton"
+                    disabled={isLoadingPosition || isPending}
+                    onClick={() => void loadPosition()}
+                    type="button"
+                  >
                     {isLoadingPosition ? "Loading..." : "Load position"}
                   </button>
                 </div>
@@ -739,55 +779,89 @@ export function MarketAdmin() {
               <section className="subsection">
                 <div className="subsectionHeader">
                   <h3>Market actions</h3>
-                  <p className="tiny">These buttons call the live write routes wired to the deployed contract.</p>
+                  <p className="tiny">
+                    {address
+                      ? "Sign transactions directly with your wallet."
+                      : "Connect your wallet to take actions."}
+                  </p>
                 </div>
-                <div className="actionControls">
-                  <div className="formRow">
-                    <input
-                      onChange={(event) => setAmount(event.target.value)}
-                      placeholder="Amount"
-                      value={amount}
-                    />
+                {!address ? (
+                  <div className="emptyState subtle">
+                    Connect your wallet above to buy positions, resolve markets, or claim winnings.
                   </div>
-                  <div className="buttonRow">
-                    <button
-                      className="positiveButton"
-                      disabled={isPending}
-                      onClick={() => submitWrite("buy_yes", [selectedMarket.market_id, Number(amount)], "Buy YES")}
-                      type="button"
-                    >
-                      {isPending ? "Working..." : "Buy YES"}
-                    </button>
-                    <button
-                      className="dangerButton"
-                      disabled={isPending}
-                      onClick={() => submitWrite("buy_no", [selectedMarket.market_id, Number(amount)], "Buy NO")}
-                      type="button"
-                    >
-                      {isPending ? "Working..." : "Buy NO"}
-                    </button>
-                    {!selectedMarket.resolved ? (
+                ) : (
+                  <div className="actionControls">
+                    <div className="formRow">
+                      <input
+                        onChange={(event) => setAmount(event.target.value)}
+                        placeholder="Amount"
+                        value={amount}
+                      />
+                    </div>
+                    <div className="buttonRow">
                       <button
-                        className="warnButton"
+                        className="positiveButton"
                         disabled={isPending}
-                        onClick={() => submitWrite("resolve_market", [selectedMarket.market_id], "Resolve Market")}
+                        onClick={() =>
+                          submitWrite(
+                            "buy_yes",
+                            [selectedMarket.market_id, Number(amount)],
+                            "Buy YES"
+                          )
+                        }
                         type="button"
                       >
-                        {isPending ? "Working..." : "Resolve"}
+                        {isPending ? "Working..." : "Buy YES"}
                       </button>
-                    ) : null}
-                    {selectedMarket.resolved ? (
                       <button
-                        className="secondaryButton"
-                        disabled={isPending || Boolean(positionState?.record.claimed)}
-                        onClick={() => submitWrite("claim", [selectedMarket.market_id], "Claim Winnings")}
+                        className="dangerButton"
+                        disabled={isPending}
+                        onClick={() =>
+                          submitWrite(
+                            "buy_no",
+                            [selectedMarket.market_id, Number(amount)],
+                            "Buy NO"
+                          )
+                        }
                         type="button"
                       >
-                        {positionState?.record.claimed ? "Already claimed" : isPending ? "Working..." : "Claim"}
+                        {isPending ? "Working..." : "Buy NO"}
                       </button>
-                    ) : null}
+                      {!selectedMarket.resolved ? (
+                        <button
+                          className="warnButton"
+                          disabled={isPending}
+                          onClick={() =>
+                            submitWrite(
+                              "resolve_market",
+                              [selectedMarket.market_id],
+                              "Resolve Market"
+                            )
+                          }
+                          type="button"
+                        >
+                          {isPending ? "Working..." : "Resolve"}
+                        </button>
+                      ) : null}
+                      {selectedMarket.resolved ? (
+                        <button
+                          className="secondaryButton"
+                          disabled={isPending || Boolean(positionState?.record.claimed)}
+                          onClick={() =>
+                            submitWrite("claim", [selectedMarket.market_id], "Claim Winnings")
+                          }
+                          type="button"
+                        >
+                          {positionState?.record.claimed
+                            ? "Already claimed"
+                            : isPending
+                              ? "Working..."
+                              : "Claim"}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                )}
               </section>
 
               <TransactionTracker onCopy={copyHash} tx={txState} />

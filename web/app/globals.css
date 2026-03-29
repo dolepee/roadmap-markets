@@ -711,6 +711,12 @@ code {
   color: var(--accent-2);
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .contractMeta {
   display: flex;
   flex-direction: column;
@@ -725,6 +731,50 @@ code {
   color: var(--ink);
 }
 
+.walletConnected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: rgba(141, 240, 184, 0.08);
+  border: 1px solid rgba(141, 240, 184, 0.2);
+}
+
+.walletAddress {
+  font-family: "SFMono-Regular", "Consolas", monospace;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.walletConnect {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.connectButton {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #56d4a0);
+  color: #0b0d12;
+  font-weight: 700;
+  border: 0;
+  cursor: pointer;
+}
+
+.connectButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.walletError {
+  font-size: 12px;
+  margin: 0;
+}
+
 @media (max-width: 1080px) {
   .heroPanel,
   .boardGrid,
@@ -737,6 +787,11 @@ code {
   .checklistGrid,
   .checklistMatrix {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    align-items: flex-end;
   }
 }
 
@@ -765,6 +820,15 @@ code {
   .hashRow {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .headerRight {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .walletConnected {
+    justify-content: center;
   }
 
   .marketCardStats,
