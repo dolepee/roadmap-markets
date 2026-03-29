@@ -1,5 +1,6 @@
 import { Header } from "./components/header";
 import { MarketBoard } from "./components/market-admin";
+import { Hero } from "./components/hero";
 import { HowItWorks, WhyGenLayer } from "./components/market-console";
 
 const CONTRACT = process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ?? "";
@@ -12,49 +13,30 @@ export default function HomePage() {
   return (
     <>
       <Header />
-
       <main>
-        {/* Hero */}
-        <section className="hero">
-          <div className="container">
-            <span className="heroBadge">
-              <span className="heroBadgeDot" />
-              Built on GenLayer
-            </span>
-            <h1 className="heroTitle">Trade whether crypto teams actually ship.</h1>
-            <p className="heroSub">
-              Prediction markets for roadmap milestones. GenLayer resolves delivery from
-              live public evidence &mdash; no oracles, no committees.
-            </p>
-            <div className="heroActions">
-              <a className="btnPrimary" href="#markets">
-                Browse Markets
-              </a>
-              <a className="btnSecondary" href="#how-it-works">
-                How It Works
-              </a>
-            </div>
-          </div>
-        </section>
+        <Hero />
 
         {/* Markets */}
-        <section style={{ paddingBottom: 32 }}>
-          <div className="container">
+        <section className="px-6 pb-8">
+          <div className="mx-auto max-w-7xl">
             <MarketBoard />
           </div>
         </section>
 
-        {/* How It Works */}
         <HowItWorks />
-
-        {/* Why GenLayer */}
         <WhyGenLayer />
 
         {/* Footer */}
-        <footer className="footer">
-          <div className="container footerInner">
-            <span className="footerLabel">Roadmap Markets &middot; GenLayer Bradbury Hackathon</span>
-            {CONTRACT && <code className="footerContract">{shortContract(CONTRACT)}</code>}
+        <footer className="border-t border-zinc-800/60 px-6 py-8">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
+            <span className="text-sm text-zinc-600">
+              Roadmap Markets &middot; GenLayer Bradbury Hackathon
+            </span>
+            {CONTRACT && (
+              <code className="font-mono text-xs text-zinc-700">
+                {shortContract(CONTRACT)}
+              </code>
+            )}
           </div>
         </footer>
       </main>
