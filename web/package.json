@@ -1,0 +1,22 @@
+{
+  "name": "roadmap-markets-web",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "node ./node_modules/next/dist/bin/next dev",
+    "build": "node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start"
+  },
+  "dependencies": {
+    "@next/swc-linux-x64-gnu": "^15.5.14",
+    "next": "^15.5.14",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.2",
+    "typescript": "^5.8.2"
+  }
+}

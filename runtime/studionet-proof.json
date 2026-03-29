@@ -1,0 +1,56 @@
+{
+  "rpc": "https://studio.genlayer.com/api",
+  "contractAddress": "0xC8F8B0F33054002cb7C186de1C8F97e2Aa19b0D6",
+  "deployTx": "0x3b0ae5dee4f64315bdbe70f29e7457b9166df5d75e4daac9daa817008670fb92",
+  "fixtureCommit": "628fa3e0d9c50c1f34230703696602b728c94c1f",
+  "trader": "0xc02a8b180831F80D7E925908c323cc304c9B97e1",
+  "markets": [
+    {
+      "marketId": "market-1",
+      "resolution": "YES",
+      "createTx": "0xaac6622995449659416eb1a0c058c73e58dc2f8f7b2a5b13288e1e22d95cc28b",
+      "buyYesTx": null,
+      "buyYesTxNote": "The 120-credit YES buy landed during an earlier Studio RPC timeout. Market state and position state confirm yes_pool=120 and yes_amount=120 on the canonical deployment.",
+      "buyNoTx": "0x8439902d2fd073dda1ae549c667c521ed993cdb507d4ee1280f436cb78bb0efb",
+      "resolveTx": "0x774b54ddbfd23498d6eab97101039fbea5a95a99fbe20800d7a877abc991fd76",
+      "claimTx": "0x2e282caf757506e41e05921d56f5f02eb705ea9b79e6b94ea700b6c7351a364b",
+      "question": "Will DemoProtocol launch a working public beta by 2026-03-25?",
+      "projectName": "DemoProtocol",
+      "milestoneText": "launch a working public beta",
+      "deadlineText": "2026-03-25",
+      "productUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-yes/product.html",
+      "docsUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-yes/docs.html",
+      "repoUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-yes/repo.html",
+      "chainUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-yes/chain.html",
+      "yesPool": 120,
+      "noPool": 80,
+      "feeAmount": 2,
+      "quoteClaim": 198,
+      "positionAfterClaim": {
+        "yesAmount": 120,
+        "noAmount": 80,
+        "claimed": true
+      }
+    },
+    {
+      "marketId": "market-2",
+      "resolution": "NO",
+      "createTx": "0x5dc03e8453c13630fc7a5af14b5a86b9f5d3a789722f8bb6de8a10c865adb4a3",
+      "buyYesTx": "0x9ed3541a1efac5b8f1bdc8b8c9ae4e70a9813117ff837d59d8d91eab6ed3642f",
+      "buyNoTx": "0x13583ba3b6bab68dd0dee4336d816a739dc7b5adff5d0b6a56ff3ddc93916d8e",
+      "resolveTx": "0x038253e8aaf91984f2afbc9ba6d0b617060011b70a62713e2fa27e3d8ca1281e",
+      "question": "Will ShadowLaunch launch a working public beta by 2026-03-25?",
+      "projectName": "ShadowLaunch",
+      "milestoneText": "launch a working public beta",
+      "deadlineText": "2026-03-25",
+      "productUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-no/product.html",
+      "docsUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-no/docs.html",
+      "repoUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-no/repo.html",
+      "chainUrl": "https://cdn.jsdelivr.net/gh/dolepee/keji-synthesis@628fa3e0d9c50c1f34230703696602b728c94c1f/roadmap-markets-no/chain.html",
+      "yesPool": 40,
+      "noPool": 140,
+      "feeAmount": 1,
+      "quoteClaim": 179
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "rpc": "https://studio.genlayer.com/api",
+  "contractAddress": "0x8e75A1418724Aa3191E3e2511870780b2f0ad0e0",
+  "deployTx": "0x050266599d85b06b4bf4c2de40dffff303bfe972bc85e3157aad9f2feadbc34c",
+  "blankQuestionCreateTx": "0x6dec3f92708e43de38ca7429a3a621c4a34439f1c5435914f8411a49072565fc",
+  "observedCliCalldataQuestionArg": 0,
+  "storedMarketId": "market-1",
+  "storedQuestion": "Will DemoProtocol launch a working public beta by 2026-03-25?",
+  "serializedWriteSmokeTest": {
+    "lockFile": "/tmp/roadmap-markets-genlayer-signer.lock",
+    "firstParallelCreateTx": "0x8ec157ea9db7d21cb91119e726748f89a18bf3761f347b4fed3859695846d11d",
+    "secondParallelCreateTx": "0x15a78112f2e26f53061a9eecc5789cf86b08b247e0a47e3159d675c13d5be0ad",
+    "firstNonce": 62,
+    "secondNonce": 63,
+    "firstMarketId": "market-2",
+    "secondMarketId": "market-3"
+  }
+}

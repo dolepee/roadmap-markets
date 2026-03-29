@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Roadmap Markets Plan</title>
+  <style>
+    :root {
+      --bg: #f5f3ec;
+      --ink: #1c1a17;
+      --muted: #5d564d;
+      --accent: #a64b2a;
+      --rule: #d7cfbf;
+      --card: #fffdf8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Georgia", "Times New Roman", serif;
+      line-height: 1.48;
+    }
+    .page {
+      width: 920px;
+      margin: 28px auto 40px;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      padding: 48px 56px 56px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+    }
+    h1, h2, h3 {
+      margin: 0 0 14px;
+      line-height: 1.12;
+      page-break-after: avoid;
+    }
+    h1 {
+      font-size: 40px;
+      letter-spacing: -0.02em;
+    }
+    h2 {
+      margin-top: 28px;
+      padding-top: 12px;
+      border-top: 1px solid var(--rule);
+      font-size: 24px;
+    }
+    h3 {
+      margin-top: 20px;
+      font-size: 18px;
+      color: var(--accent);
+    }
+    p, li {
+      font-size: 15px;
+      margin: 0 0 10px;
+    }
+    .lede {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 5px 10px;
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    ul, ol {
+      margin: 8px 0 14px 24px;
+      padding: 0;
+    }
+    code, pre {
+      font-family: "SFMono-Regular", "Consolas", monospace;
+      font-size: 13px;
+    }
+    pre {
+      white-space: pre-wrap;
+      margin: 10px 0 18px;
+      padding: 14px 16px;
+      background: #faf6ee;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+    .card {
+      padding: 16px 18px;
+      background: #fcfaf4;
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+    }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media print {
+      body { background: white; }
+      .page {
+        margin: 0;
+        width: auto;
+        border: 0;
+        box-shadow: none;
+        padding: 0;
+      }
+      h2 { page-break-after: avoid; }
+      pre, .card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="badge">GenLayer Hackathon Plan</div>
+    <h1>Roadmap Markets</h1>
+    <p class="lede">Trade whether crypto teams actually ship.</p>
+
+    <h2>Product</h2>
+    <p>Roadmap Markets is a GenLayer-native market for trading crypto project execution risk. Users take <code>YES / NO</code> positions on milestone questions like whether a team will launch a mainnet, ship a usable feature, or open deposits and withdrawals before a deadline.</p>
+    <p>This is not a generic price prediction market. The wedge is subjective milestone resolution over live public evidence.</p>
+
+    <h2>Why This Fits GenLayer</h2>
+    <ul>
+      <li>The question depends on live web evidence.</li>
+      <li>The answer is subjective, not a simple oracle lookup.</li>
+      <li>Validators need structured equivalence around a non-deterministic judgment.</li>
+      <li>Appeals matter when the resolution is close.</li>
+    </ul>
+    <p>Roadmap Markets uses GenLayer for the hardest part of the product: resolving whether a team actually delivered something meaningful.</p>
+
+    <h2>User Value</h2>
+    <div class="two-col">
+      <section class="card">
+        <h3>For Traders</h3>
+        <ul>
+          <li>Hedge launch and roadmap risk.</li>
+          <li>Profit when teams miss milestones or overperform expectations.</li>
+          <li>Trade on execution quality instead of pure price speculation.</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h3>For Projects</h3>
+        <ul>
+          <li>Create credibility around public delivery commitments.</li>
+          <li>Let the market price roadmap confidence in real time.</li>
+          <li>Increase attention around major milestones.</li>
+        </ul>
+      </section>
+    </div>
+
+    <h2>Differentiation</h2>
+    <p>Normal prediction markets work best when the answer is objective. Roadmap Markets focuses on subjective milestone questions:</p>
+    <ul>
+      <li>Was the feature actually usable?</li>
+      <li>Was the launch more than an announcement page?</li>
+      <li>Did the team satisfy the stated rubric before the deadline?</li>
+    </ul>
+    <p>That is the part simple oracle systems handle poorly.</p>
+
+    <h2>MVP Scope</h2>
+    <ul>
+      <li>One market type: <code>ship_by_date</code></li>
+      <li>One settlement model: binary <code>YES / NO</code></li>
+      <li>One collateral: testnet stablecoin or market credits</li>
+      <li>One question template: <code>Will &lt;project&gt; deliver &lt;milestone&gt; by &lt;date&gt;?</code></li>
+    </ul>
+
+    <h2>Resolution Design</h2>
+    <p>Do not ask the model an open-ended question like “Did they ship?” Use a fixed checklist and derive the final outcome deterministically.</p>
+    <pre>{
+  "product_live": true,
+  "feature_usable": true,
+  "docs_or_changelog_live": true,
+  "repo_or_chain_evidence": true,
+  "resolution": "YES",
+  "notes": "Public beta loads, wallet connect works, swap route executes in test flow."
+}</pre>
+    <p>Final rule: <code>YES</code> only if all required checklist conditions are true before the deadline. Otherwise <code>NO</code>.</p>
+    <p>Validator equivalence compares exact booleans and the exact final resolution, while ignoring prose drift in notes.</p>
+
+    <h2>Contract Architecture</h2>
+    <pre>create_market(question, project_name, milestone_text, deadline, evidence_urls, fee_bps)
+buy_yes(market_id, amount)
+buy_no(market_id, amount)
+resolve_market(market_id)
+claim(market_id)</pre>
+    <p>Stored state includes market metadata, pool balances, user positions, deadline, resolution status, final ruling, and claim status.</p>
+
+    <h2>Frontend</h2>
+    <ul>
+      <li>Home: active markets</li>
+      <li>Market detail: question, deadline, evidence URLs, buy panel</li>
+      <li>Resolution view: checklist and final verdict</li>
+      <li>Portfolio: positions and claimable payouts</li>
+    </ul>
+    <p>Do not spend time on advanced charting, leverage, or social features in the MVP.</p>
+
+    <h2>Execution Plan</h2>
+    <h3>Phase 1: Contract Core</h3>
+    <ol>
+      <li>Define the market schema and payout model.</li>
+      <li>Implement market creation.</li>
+      <li>Implement <code>YES / NO</code> position buying.</li>
+      <li>Implement claim logic for settled markets.</li>
+    </ol>
+
+    <h3>Phase 2: Resolution Engine</h3>
+    <ol>
+      <li>Build the fixed checklist schema.</li>
+      <li>Implement <code>resolve_market</code> with <code>gl.vm.run_nondet</code>.</li>
+      <li>Fetch live evidence URLs inside the nondeterministic block.</li>
+      <li>Compare structured booleans only in equivalence.</li>
+    </ol>
+
+    <h3>Phase 3: Frontend</h3>
+    <ol>
+      <li>List markets.</li>
+      <li>Open market detail.</li>
+      <li>Buy <code>YES / NO</code>.</li>
+      <li>Display deadline and evidence.</li>
+      <li>Show resolution and claim flow.</li>
+    </ol>
+
+    <h3>Phase 4: Proof and Demo</h3>
+    <ol>
+      <li>Deploy in GenLayer Studio first.</li>
+      <li>Create two demo markets: one <code>YES</code> and one <code>NO</code>.</li>
+      <li>Verify stored outputs and claim flow.</li>
+      <li>Deploy a checkpoint version to Bradbury.</li>
+    </ol>
+
+    <h2>7-Day Build Plan</h2>
+    <ul>
+      <li><strong>Day 1:</strong> lock scope, market schema, checklist, payout model</li>
+      <li><strong>Day 2:</strong> scaffold contract, implement market creation, implement buys</li>
+      <li><strong>Day 3:</strong> implement accounting, claim flow, direct tests</li>
+      <li><strong>Day 4:</strong> implement fixed-schema resolution and equivalence</li>
+      <li><strong>Day 5:</strong> build minimal frontend and wire reads/writes</li>
+      <li><strong>Day 6:</strong> deploy in Studio and run one <code>YES</code> and one <code>NO</code> market</li>
+      <li><strong>Day 7:</strong> Bradbury checkpoint, README polish, demo recording</li>
+    </ul>
+
+    <h2>Demo Plan</h2>
+    <p>Use one crisp market with public evidence.</p>
+    <p>Example: “Will DemoProtocol launch a working public beta by April 30?”</p>
+    <ol>
+      <li>Create the market.</li>
+      <li>Buy <code>YES</code>.</li>
+      <li>Buy <code>NO</code>.</li>
+      <li>Resolve the market from live evidence.</li>
+      <li>Show structured checklist output.</li>
+      <li>Claim winnings.</li>
+    </ol>
+
+    <h2>Risks</h2>
+    <ul>
+      <li><strong>Resolution ambiguity:</strong> mitigate with crisp, narrow milestones and fixed checklists.</li>
+      <li><strong>Thin demo liquidity:</strong> seed both sides in the demo.</li>
+      <li><strong>Overbuilt UI:</strong> optimize for resolution correctness, not trading polish.</li>
+    </ul>
+
+    <h2>Why This Can Win</h2>
+    <ul>
+      <li>Prediction markets are already an accepted GenLayer use case.</li>
+      <li>The differentiator is subjective roadmap resolution, not price markets.</li>
+      <li>The product is crypto-native and financially legible.</li>
+      <li>The contract uses GenLayer where it is actually strongest.</li>
+      <li>The demo is easy to understand: trade whether teams actually ship.</li>
+    </ul>
+
+    <h2>Submission Positioning</h2>
+    <p><strong>Primary:</strong> Trade whether crypto teams actually ship.</p>
+    <p><strong>Secondary:</strong> A GenLayer-native execution-risk market for roadmap milestones.</p>
+
+    <h2>Sources</h2>
+    <p class="small">
+      https://docs.genlayer.com/understand-genlayer-protocol/typical-use-cases<br>
+      https://www.genlayer.com/how-it-works<br>
+      https://www.genlayer.com/about<br>
+      https://www.genlayer.com/news/announcing-testnet-bradbury<br>
+      https://docs.genlayer.com/developers/intelligent-contracts/examples/prediction
+    </p>
+  </main>
+</body>
+</html>

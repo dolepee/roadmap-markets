@@ -1,0 +1,14 @@
+.pytest_cache/
+__pycache__/
+*.pyc
+
+runtime/*.out
+runtime/.env
+runtime/.env.local
+runtime/studionet.env
+
+web/node_modules
+web/node_modules/
+web/.next/
+web/.env.local
+web/tsconfig.tsbuildinfo
