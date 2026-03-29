@@ -19,7 +19,7 @@ export default function HomePage() {
           <div className="container">
             <span className="heroBadge">
               <span className="heroBadgeDot" />
-              Live on GenLayer Studio
+              Built on GenLayer
             </span>
             <h1 className="heroTitle">Trade whether crypto teams actually ship.</h1>
             <p className="heroSub">

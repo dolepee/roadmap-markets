@@ -529,7 +529,7 @@ input {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 40px 24px;
   overflow-y: auto;
@@ -537,11 +537,13 @@ input {
 
 .detailSheet {
   width: 100%;
-  max-width: 780px;
+  max-width: 960px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 80px);
 }
 
 .detailClose {
@@ -596,6 +598,28 @@ input {
 
 .detailBody {
   padding: 24px 32px 32px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Two-column detail layout ────────────────────────────── */
+.detailColumns {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.detailLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.detailRight {
+  width: 340px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
 }
 
 /* ── Detail meta grid ─────────────────────────────────────── */
@@ -1080,6 +1104,100 @@ input {
   color: var(--red);
 }
 
+/* ── Create market form ──────────────────────────────────── */
+.createBtn {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  background: var(--green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.createBtn:hover {
+  opacity: 0.9;
+}
+
+.createFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.createField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.createField.full {
+  grid-column: 1 / -1;
+}
+
+.createLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.createInput {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+
+.createInput:focus {
+  border-color: var(--blue);
+}
+
+.createInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.createSubmitBtn {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  transition: opacity 0.15s;
+}
+
+.createSubmitBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.createSubmitBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Right column overrides ──────────────────────────────── */
+.detailRight .posGrid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.detailRight .tradeSection {
+  margin-bottom: 20px;
+}
+
+.detailRight .posSection {
+  margin-bottom: 0;
+}
+
 /* ── How it works ─────────────────────────────────────────── */
 .howSection {
   padding: 64px 0;
@@ -1295,12 +1413,34 @@ input {
 
   .detailOverlay {
     padding: 16px;
+    align-items: flex-start;
+  }
+
+  .detailSheet {
+    max-height: none;
+  }
+
+  .detailColumns {
+    flex-direction: column;
+  }
+
+  .detailRight {
+    width: 100%;
+    position: static;
+  }
+
+  .detailRight .posGrid {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .detailHeader,
   .detailBody {
     padding-left: 20px;
     padding-right: 20px;
+  }
+
+  .createFormGrid {
+    grid-template-columns: 1fr;
   }
 
   .headerNav {
