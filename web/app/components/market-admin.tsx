@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useWallet } from "../../lib/wallet-context";
-import { WalletButton } from "./wallet-button";
+
+/* ── Types ────────────────────────────────────────────────── */
 
 type TxStatus =
   | "PENDING"
@@ -53,822 +54,643 @@ type PositionRecord = {
   claimed: boolean;
 };
 
-type PositionState = {
-  record: PositionRecord;
-  claimable: number;
-};
-
 type TxPanelState = {
   action: string;
   hash: string;
   status: TxStatus;
   message: string;
-  result?: string;
-  rounds?: string;
   error?: string;
 };
 
-const checklistLabels: Array<{ key: keyof Checklist; title: string; description: string }> = [
-  {
-    key: "product_live",
-    title: "product_live",
-    description: "Public product surface is live"
-  },
-  {
-    key: "feature_usable",
-    title: "feature_usable",
-    description: "Promised feature appears usable"
-  },
-  {
-    key: "docs_or_changelog_live",
-    title: "docs_or_changelog_live",
-    description: "Docs or changelog are public"
-  },
-  {
-    key: "repo_or_chain_evidence",
-    title: "repo_or_chain_evidence",
-    description: "Repo or chain evidence supports delivery"
-  }
+/* ── Checklist labels ─────────────────────────────────────── */
+
+const CHECKLIST: Array<{ key: keyof Checklist; label: string }> = [
+  { key: "product_live", label: "Product live" },
+  { key: "feature_usable", label: "Feature usable" },
+  { key: "docs_or_changelog_live", label: "Docs / changelog" },
+  { key: "repo_or_chain_evidence", label: "Repo / chain evidence" },
 ];
 
-const txPhases = ["Submitted", "Proposing", "Accepted", "Finalized"];
+const TX_STEPS = ["Submitted", "Proposing", "Accepted", "Finalized"];
 
-const contractAddress = (
-  process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS || "0x0000000000000000000000000000000000000000"
-) as `0x${string}`;
+const CONTRACT = (process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ??
+  "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
-function toNumber(value: unknown): number {
-  if (typeof value === "number") return value;
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
+/* ── Helpers ──────────────────────────────────────────────── */
+
+function toNum(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (typeof v === "bigint") return Number(v);
+  if (typeof v === "string") { const n = Number(v); return Number.isFinite(n) ? n : 0; }
   return 0;
 }
 
-function mapToObject(value: unknown): Record<string, unknown> {
-  if (value instanceof Map) {
-    const obj: Record<string, unknown> = {};
-    for (const [k, v] of value.entries()) {
-      obj[String(k)] = v instanceof Map ? mapToObject(v) : v;
-    }
-    return obj;
+function m2o(v: unknown): Record<string, unknown> {
+  if (v instanceof Map) {
+    const o: Record<string, unknown> = {};
+    for (const [k, val] of v.entries()) o[String(k)] = val instanceof Map ? m2o(val) : val;
+    return o;
   }
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as Record<string, unknown>;
-  }
+  if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
   return {};
 }
 
-function normalizeChecklist(value: unknown): Checklist {
-  const source = mapToObject(value);
+function normChecklist(v: unknown): Checklist {
+  const s = m2o(v);
   return {
-    product_live: Boolean(source.product_live),
-    feature_usable: Boolean(source.feature_usable),
-    docs_or_changelog_live: Boolean(source.docs_or_changelog_live),
-    repo_or_chain_evidence: Boolean(source.repo_or_chain_evidence)
+    product_live: Boolean(s.product_live),
+    feature_usable: Boolean(s.feature_usable),
+    docs_or_changelog_live: Boolean(s.docs_or_changelog_live),
+    repo_or_chain_evidence: Boolean(s.repo_or_chain_evidence),
   };
 }
 
-function normalizeMarket(value: unknown): MarketRecord {
-  const source = mapToObject(value);
-  // If the value was a JSON string from the contract, parse it
-  if (typeof value === "string") {
-    try {
-      return normalizeMarket(JSON.parse(value));
-    } catch {
-      // not JSON, continue with empty
-    }
-  }
+function normMarket(v: unknown): MarketRecord {
+  if (typeof v === "string") { try { return normMarket(JSON.parse(v)); } catch { /* */ } }
+  const s = m2o(v);
   return {
-    market_id: String(source.market_id ?? ""),
-    question: String(source.question ?? ""),
-    project_name: String(source.project_name ?? ""),
-    milestone_text: String(source.milestone_text ?? ""),
-    deadline_text: String(source.deadline_text ?? ""),
-    product_url: String(source.product_url ?? ""),
-    docs_url: String(source.docs_url ?? ""),
-    repo_url: String(source.repo_url ?? ""),
-    chain_url: String(source.chain_url ?? ""),
-    fee_bps: toNumber(source.fee_bps),
-    yes_pool: toNumber(source.yes_pool),
-    no_pool: toNumber(source.no_pool),
-    resolved: Boolean(source.resolved),
-    resolution: String(source.resolution ?? ""),
-    checklist: normalizeChecklist(source.checklist),
-    notes: String(source.notes ?? ""),
-    creator: String(source.creator ?? ""),
-    resolved_by: String(source.resolved_by ?? ""),
-    fee_amount: toNumber(source.fee_amount)
+    market_id: String(s.market_id ?? ""),
+    question: String(s.question ?? ""),
+    project_name: String(s.project_name ?? ""),
+    milestone_text: String(s.milestone_text ?? ""),
+    deadline_text: String(s.deadline_text ?? ""),
+    product_url: String(s.product_url ?? ""),
+    docs_url: String(s.docs_url ?? ""),
+    repo_url: String(s.repo_url ?? ""),
+    chain_url: String(s.chain_url ?? ""),
+    fee_bps: toNum(s.fee_bps),
+    yes_pool: toNum(s.yes_pool),
+    no_pool: toNum(s.no_pool),
+    resolved: Boolean(s.resolved),
+    resolution: String(s.resolution ?? ""),
+    checklist: normChecklist(s.checklist),
+    notes: String(s.notes ?? ""),
+    creator: String(s.creator ?? ""),
+    resolved_by: String(s.resolved_by ?? ""),
+    fee_amount: toNum(s.fee_amount),
   };
 }
 
-function normalizePosition(value: unknown): PositionRecord {
-  const source = mapToObject(value);
-  if (typeof value === "string") {
-    try {
-      return normalizePosition(JSON.parse(value));
-    } catch {
-      // not JSON
-    }
-  }
+function normPosition(v: unknown): PositionRecord {
+  if (typeof v === "string") { try { return normPosition(JSON.parse(v)); } catch { /* */ } }
+  const s = m2o(v);
   return {
-    market_id: String(source.market_id ?? ""),
-    trader: String(source.trader ?? ""),
-    yes_amount: toNumber(source.yes_amount),
-    no_amount: toNumber(source.no_amount),
-    claimed: Boolean(source.claimed)
+    market_id: String(s.market_id ?? ""),
+    trader: String(s.trader ?? ""),
+    yes_amount: toNum(s.yes_amount),
+    no_amount: toNum(s.no_amount),
+    claimed: Boolean(s.claimed),
   };
 }
 
-function sortMarkets(markets: MarketRecord[]) {
-  return [...markets].sort((left, right) => {
-    const leftValue = Number(left.market_id.replace("market-", "")) || 0;
-    const rightValue = Number(right.market_id.replace("market-", "")) || 0;
-    return leftValue - rightValue;
-  });
+function sortMarkets(m: MarketRecord[]) {
+  return [...m].sort((a, b) =>
+    (Number(a.market_id.replace("market-", "")) || 0) -
+    (Number(b.market_id.replace("market-", "")) || 0)
+  );
 }
 
-function formatCredits(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
+function fmt(n: number) { return new Intl.NumberFormat("en-US").format(n); }
+
+function pct(yes: number, no: number) {
+  const t = yes + no;
+  return t > 0 ? Math.round((yes / t) * 100) : 50;
 }
 
-function marketStatusLabel(market: MarketRecord) {
-  if (!market.resolved) return "Open";
-  return market.resolution === "YES" ? "Resolved YES" : "Resolved NO";
-}
+function shortHash(h: string) { return h ? `${h.slice(0, 10)}...${h.slice(-6)}` : ""; }
+function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
-function marketStatusTone(market: MarketRecord) {
-  if (!market.resolved) return "pending";
-  return market.resolution === "YES" ? "yes" : "no";
-}
-
-function trackerStage(status: TxStatus) {
-  if (status === "FAILED" || status === "CANCELED" || status === "UNDETERMINED") return -1;
-  if (status === "FINALIZED") return 3;
-  if (status === "ACCEPTED") return 2;
-  if (
-    status === "COMMITTING" ||
-    status === "REVEALING" ||
-    status === "PROPOSING" ||
-    status === "PENDING"
-  )
-    return 1;
+function txStage(s: TxStatus) {
+  if (s === "FAILED" || s === "CANCELED" || s === "UNDETERMINED") return -1;
+  if (s === "FINALIZED") return 3;
+  if (s === "ACCEPTED") return 2;
+  if (["COMMITTING", "REVEALING", "PROPOSING", "PENDING"].includes(s)) return 1;
   return 0;
 }
 
-function shortHash(value: string) {
-  if (!value) return "";
-  return `${value.slice(0, 10)}...${value.slice(-8)}`;
-}
+/* ── Sub-components ───────────────────────────────────────── */
 
-function sleep(delayMs: number) {
-  return new Promise((resolve) => setTimeout(resolve, delayMs));
-}
-
-function ChecklistGrid({ checklist, compact = false }: { checklist: Checklist; compact?: boolean }) {
+function TxTracker({ tx, onCopy }: { tx: TxPanelState | null; onCopy: (h: string) => void }) {
+  if (!tx) return null;
+  const stage = txStage(tx.status);
   return (
-    <div className={compact ? "checklistMatrix compact" : "checklistMatrix"}>
-      {checklistLabels.map((item) => {
-        const passed = checklist[item.key];
-        return (
-          <div className={compact ? "checkCell compact" : "checkCell"} key={item.key}>
-            <span className={passed ? "checkState yes" : "checkState no"}>
-              {passed ? "PASS" : "MISS"}
-            </span>
-            <div>
-              <strong>{item.title}</strong>
-              <p>{item.description}</p>
-            </div>
+    <div className="txTracker">
+      <div className="txHeader">
+        <span className="txAction">{tx.action}</span>
+        <span className={`statusBadge ${stage < 0 ? "no" : stage === 3 ? "yes" : "open"}`}>
+          {tx.status}
+        </span>
+      </div>
+      <div className="txSteps">
+        {TX_STEPS.map((_, i) => (
+          <div
+            key={i}
+            className={`txStep ${
+              stage < 0 ? (i <= 1 ? "failed" : "") : i < stage ? "done" : i === stage ? "active" : ""
+            }`}
+          />
+        ))}
+      </div>
+      <div className="txLabels">
+        {TX_STEPS.map((l) => <span key={l}>{l}</span>)}
+      </div>
+      <div className="txFooter">
+        {tx.hash && (
+          <div className="txHash">
+            {shortHash(tx.hash)}
+            <button className="txCopyBtn" onClick={() => onCopy(tx.hash)} type="button">Copy</button>
           </div>
-        );
-      })}
+        )}
+        <p className="txMsg">{tx.message}</p>
+        {tx.error && <p className="txError">{tx.error}</p>}
+      </div>
     </div>
   );
 }
 
-function TransactionTracker({
-  tx,
-  onCopy
-}: {
-  tx: TxPanelState | null;
-  onCopy: (hash: string) => void;
-}) {
-  if (!tx) return null;
+/* ── Detail modal ─────────────────────────────────────────── */
 
-  const stage = trackerStage(tx.status);
+function MarketDetail({
+  market,
+  onClose,
+}: {
+  market: MarketRecord;
+  onClose: () => void;
+}) {
+  const { address, client } = useWallet();
+  const [amount, setAmount] = useState("100");
+  const [traderAddr, setTraderAddr] = useState(address ?? "");
+  const [position, setPosition] = useState<PositionRecord | null>(null);
+  const [claimable, setClaimable] = useState(0);
+  const [posLoading, setPosLoading] = useState(false);
+  const [posError, setPosError] = useState("");
+  const [txState, setTxState] = useState<TxPanelState | null>(null);
+  const [copyMsg, setCopyMsg] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => { if (address) setTraderAddr(address); }, [address]);
+
+  const sdkRead = useCallback(async (fn: string, args: unknown[]) => {
+    for (let i = 0; i < 3; i++) {
+      try {
+        return await client.readContract({ address: CONTRACT, functionName: fn, args: args as never });
+      } catch (e) {
+        if (i === 2) throw e;
+        await sleep(1500);
+      }
+    }
+  }, [client]);
+
+  async function loadPos() {
+    if (!traderAddr.trim()) return;
+    setPosLoading(true);
+    setPosError("");
+    try {
+      const [p, q] = await Promise.all([
+        sdkRead("get_position", [market.market_id, traderAddr.trim()]),
+        sdkRead("quote_claim", [market.market_id, traderAddr.trim()]),
+      ]);
+      setPosition(normPosition(p));
+      setClaimable(toNum(q));
+    } catch (e) {
+      setPosError(e instanceof Error ? e.message : "Read failed");
+      setPosition(null);
+    } finally {
+      setPosLoading(false);
+    }
+  }
+
+  function doWrite(fn: string, args: unknown[], label: string) {
+    if (!address) return;
+    startTransition(async () => {
+      let hash = "";
+      setCopyMsg("");
+      setTxState({ action: label, hash: "", status: "PENDING", message: "Submitting..." });
+      try {
+        hash = await client.writeContract({
+          address: CONTRACT,
+          functionName: fn,
+          args: args as never,
+          value: BigInt(0),
+        });
+        setTxState({ action: label, hash, status: "PENDING", message: "Waiting for validators..." });
+
+        for (let i = 0; i < 40; i++) {
+          const tx = await client.getTransaction({ hash: hash as never });
+          const st = ((tx as Record<string, unknown>).status ??
+            (tx as Record<string, unknown>).statusName ?? "PENDING") as TxStatus;
+          setTxState({ action: label, hash, status: st, message: `Status: ${st}` });
+          if (["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)) {
+            if (st !== "FINALIZED")
+              setTxState({ action: label, hash, status: st, message: `Ended: ${st}`, error: "Transaction did not finalize." });
+            break;
+          }
+          await sleep(3000);
+        }
+
+        // Refresh position after tx
+        if (traderAddr.trim()) await loadPos();
+      } catch (e) {
+        setTxState({ action: label, hash, status: "FAILED", message: "Failed", error: e instanceof Error ? e.message : "Unknown error" });
+      }
+    });
+  }
+
+  function copyHash(h: string) {
+    navigator.clipboard?.writeText(h).then(
+      () => setCopyMsg("Copied!"),
+      () => setCopyMsg("Copy failed"),
+    );
+    setTimeout(() => setCopyMsg(""), 2000);
+  }
+
+  const yPct = pct(market.yes_pool, market.no_pool);
+
+  const evidenceLinks = [
+    { label: "Product", icon: "P", url: market.product_url },
+    { label: "Docs", icon: "D", url: market.docs_url },
+    { label: "Repo", icon: "R", url: market.repo_url },
+    { label: "Chain", icon: "C", url: market.chain_url },
+  ];
 
   return (
-    <section className="card txCard">
-      <div className="sectionHeader">
-        <div>
-          <p className="cardLabel">Transaction</p>
-          <h3>{tx.action}</h3>
+    <div className="detailOverlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="detailSheet">
+        <div className="detailHeader">
+          <button className="detailClose" onClick={onClose} type="button">&#x2715;</button>
+          <p className="detailProject">{market.project_name}</p>
+          <h2 className="detailTitle">{market.question}</h2>
+          <div className="detailStatusRow">
+            <span className={`statusBadge ${!market.resolved ? "open" : market.resolution === "YES" ? "yes" : "no"}`}>
+              {!market.resolved ? "Open" : market.resolution === "YES" ? "Resolved YES" : "Resolved NO"}
+            </span>
+            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+              Deadline: {market.deadline_text}
+            </span>
+          </div>
         </div>
-        <span className={`pill ${stage < 0 ? "no" : stage === 3 ? "yes" : "pending"}`}>
-          {tx.status}
-        </span>
+
+        <div className="detailBody">
+          {/* Pool stats */}
+          <div className="metaGrid">
+            <div className="metaCell">
+              <span className="metaLabel">YES Pool</span>
+              <span className="metaValue" style={{ color: "var(--green)" }}>{fmt(market.yes_pool)}</span>
+            </div>
+            <div className="metaCell">
+              <span className="metaLabel">NO Pool</span>
+              <span className="metaValue" style={{ color: "var(--red)" }}>{fmt(market.no_pool)}</span>
+            </div>
+            <div className="metaCell">
+              <span className="metaLabel">Total Pool</span>
+              <span className="metaValue">{fmt(market.yes_pool + market.no_pool)}</span>
+            </div>
+            <div className="metaCell">
+              <span className="metaLabel">Fee</span>
+              <span className="metaValue">{market.fee_bps} bps</span>
+            </div>
+            <div className="metaCell">
+              <span className="metaLabel">Fee Collected</span>
+              <span className="metaValue">{fmt(market.fee_amount)}</span>
+            </div>
+            <div className="metaCell">
+              <span className="metaLabel">Milestone</span>
+              <span className="metaValue" style={{ fontSize: 14 }}>{market.milestone_text}</span>
+            </div>
+          </div>
+
+          {/* Probability bar */}
+          <div className="probBar" style={{ marginBottom: 28 }}>
+            <div className="probLabels">
+              <span className="probYes">YES {yPct}%</span>
+              <span className="probNo">NO {100 - yPct}%</span>
+            </div>
+            <div className="probTrack">
+              <div className="probFill" style={{ width: `${yPct}%` }} />
+            </div>
+          </div>
+
+          {/* Evidence */}
+          <div className="evidenceSection">
+            <p className="evidenceTitle">Evidence Sources</p>
+            <div className="evidenceGrid">
+              {evidenceLinks.map((ev) => (
+                <a key={ev.label} className="evidenceLink" href={ev.url} target="_blank" rel="noreferrer">
+                  <span className="evidenceIcon">{ev.icon}</span>
+                  <span className="evidenceLinkText">
+                    <span className="evidenceLinkLabel">{ev.label}</span>
+                    <span className="evidenceLinkUrl">{ev.url || "(none)"}</span>
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Resolution checklist */}
+          <div className="checkSection">
+            <p className="checkTitle">Resolution Checklist</p>
+            {market.resolved ? (
+              <>
+                <div className="checkGrid">
+                  {CHECKLIST.map((c) => {
+                    const pass = market.checklist[c.key];
+                    return (
+                      <div className="checkItem" key={c.key}>
+                        <span className={`checkIcon ${pass ? "pass" : "fail"}`}>
+                          {pass ? "\u2713" : "\u2717"}
+                        </span>
+                        <span>
+                          <span className="checkField">{c.key}</span>
+                          <span className="checkDesc">{c.label}</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {market.notes && <p className="resNotes">{market.notes}</p>}
+              </>
+            ) : (
+              <div className="checkPending">
+                Checklist results will appear after GenLayer resolves this market.
+              </div>
+            )}
+          </div>
+
+          {/* Trading */}
+          <div className="tradeSection">
+            <p className="tradeTitle">Trade</p>
+            {!address ? (
+              <div className="noWalletMsg">Connect your wallet to take positions.</div>
+            ) : (
+              <div className="tradeBox">
+                <div className="tradeInputRow">
+                  <span className="tradeInputLabel">Amount</span>
+                  <input
+                    className="tradeInput"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0"
+                    type="text"
+                    inputMode="numeric"
+                  />
+                </div>
+                <div className="tradeButtons">
+                  <button
+                    className="tradeBtn yes"
+                    disabled={isPending || market.resolved}
+                    onClick={() => doWrite("buy_yes", [market.market_id, Number(amount)], "Buy YES")}
+                    type="button"
+                  >
+                    {isPending ? "..." : `Buy YES ${yPct}%`}
+                  </button>
+                  <button
+                    className="tradeBtn no"
+                    disabled={isPending || market.resolved}
+                    onClick={() => doWrite("buy_no", [market.market_id, Number(amount)], "Buy NO")}
+                    type="button"
+                  >
+                    {isPending ? "..." : `Buy NO ${100 - yPct}%`}
+                  </button>
+                </div>
+                {(!market.resolved || (market.resolved && position)) && (
+                  <div className="tradeActions">
+                    {!market.resolved && (
+                      <button
+                        className="actionBtn resolve"
+                        disabled={isPending}
+                        onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
+                        type="button"
+                      >
+                        Resolve
+                      </button>
+                    )}
+                    {market.resolved && (
+                      <button
+                        className="actionBtn claim"
+                        disabled={isPending || Boolean(position?.claimed)}
+                        onClick={() => doWrite("claim", [market.market_id], "Claim Winnings")}
+                        type="button"
+                      >
+                        {position?.claimed ? "Claimed" : "Claim Winnings"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Tx tracker */}
+          {copyMsg && <div className="infoBanner">{copyMsg}</div>}
+          <TxTracker tx={txState} onCopy={copyHash} />
+
+          {/* Position lookup */}
+          <div className="posSection">
+            <p className="posTitle">Position Lookup</p>
+            <div className="posInputRow">
+              <input
+                className="posInput"
+                placeholder="0x... trader address"
+                value={traderAddr}
+                onChange={(e) => setTraderAddr(e.target.value)}
+              />
+              <button
+                className="posLoadBtn"
+                disabled={posLoading || isPending}
+                onClick={() => void loadPos()}
+                type="button"
+              >
+                {posLoading ? "Loading..." : "Load"}
+              </button>
+            </div>
+            {posError && <p className="errorText">{posError}</p>}
+            {position && (
+              <div className="posGrid">
+                <div className="posCell">
+                  <span className="posCellLabel">YES</span>
+                  <span className="posCellValue" style={{ color: "var(--green)" }}>{fmt(position.yes_amount)}</span>
+                </div>
+                <div className="posCell">
+                  <span className="posCellLabel">NO</span>
+                  <span className="posCellValue" style={{ color: "var(--red)" }}>{fmt(position.no_amount)}</span>
+                </div>
+                <div className="posCell">
+                  <span className="posCellLabel">Claimable</span>
+                  <span className="posCellValue">{fmt(claimable)}</span>
+                </div>
+                <div className="posCell">
+                  <span className="posCellLabel">Claimed</span>
+                  <span className="posCellValue">{position.claimed ? "Yes" : "No"}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main export ──────────────────────────────────────────── */
+
+export function MarketBoard() {
+  const { client } = useWallet();
+  const [markets, setMarkets] = useState<MarketRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selected, setSelected] = useState<MarketRecord | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      let ids: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await client.readContract({ address: CONTRACT, functionName: "get_market_ids", args: [] });
+          if (res instanceof Map) ids = Array.from(res.values()).map(String);
+          else if (Array.isArray(res)) ids = res.map(String);
+          else if (typeof res === "string") { try { const p = JSON.parse(res); if (Array.isArray(p)) ids = p.map(String); } catch {} }
+          break;
+        } catch { if (i === 2) throw new Error("Failed to load market list"); await sleep(1500); }
+      }
+
+      const all = await Promise.all(
+        ids.map(async (id) => {
+          for (let i = 0; i < 3; i++) {
+            try {
+              return normMarket(await client.readContract({ address: CONTRACT, functionName: "get_market", args: [id] }));
+            } catch { if (i === 2) throw new Error(`Failed to load ${id}`); await sleep(1500); }
+          }
+          throw new Error("unreachable");
+        }),
+      );
+      setMarkets(sortMarkets(all));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Load failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [client]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  // Close modal on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setSelected(null); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Summary stats
+  const totalPool = markets.reduce((s, m) => s + m.yes_pool + m.no_pool, 0);
+  const resolvedCount = markets.filter((m) => m.resolved).length;
+
+  return (
+    <>
+      {/* Stats bar */}
+      {markets.length > 0 && (
+        <div className="statsBar">
+          <div className="statCell">
+            <span className="statValue">{markets.length}</span>
+            <span className="statLabel">Markets</span>
+          </div>
+          <div className="statCell">
+            <span className="statValue">{fmt(totalPool)}</span>
+            <span className="statLabel">Total Volume</span>
+          </div>
+          <div className="statCell">
+            <span className="statValue">{resolvedCount}</span>
+            <span className="statLabel">Resolved</span>
+          </div>
+          <div className="statCell">
+            <span className="statValue">{markets.length - resolvedCount}</span>
+            <span className="statLabel">Active</span>
+          </div>
+        </div>
+      )}
+
+      {/* Section header */}
+      <div className="sectionHead" id="markets">
+        <div>
+          <h2 className="sectionTitle">Markets</h2>
+          <p className="sectionSub">
+            {loading ? "Loading live state..." : `${markets.length} markets on GenLayer Studio`}
+          </p>
+        </div>
       </div>
 
-      <div className="trackerRow">
-        {txPhases.map((label, index) => {
-          const className =
-            stage < 0
-              ? index === 1
-                ? "trackerStep failed"
-                : "trackerStep"
-              : index < stage
-                ? "trackerStep done"
-                : index === stage
-                  ? "trackerStep active"
-                  : "trackerStep";
+      {error && <div className="errorBanner">{error}</div>}
+
+      {/* Grid */}
+      {loading && <div className="emptyState">Loading markets from contract...</div>}
+
+      {!loading && markets.length === 0 && !error && (
+        <div className="emptyState">No markets found on this contract.</div>
+      )}
+
+      <div className="marketGrid">
+        {markets.map((m) => {
+          const yP = pct(m.yes_pool, m.no_pool);
           return (
-            <div className={className} key={label}>
-              <span>{label}</span>
+            <div
+              className={`mCard ${selected?.market_id === m.market_id ? "selected" : ""}`}
+              key={m.market_id}
+              onClick={() => setSelected(m)}
+            >
+              <div className="mCardTop">
+                <div>
+                  <p className="mCardProject">{m.project_name}</p>
+                  <h3 className="mCardQuestion">{m.question}</h3>
+                </div>
+                <span
+                  className={`statusBadge ${!m.resolved ? "open" : m.resolution === "YES" ? "yes" : "no"}`}
+                >
+                  {!m.resolved ? "Open" : m.resolution === "YES" ? "YES" : "NO"}
+                </span>
+              </div>
+
+              <div className="probBar">
+                <div className="probLabels">
+                  <span className="probYes">YES {yP}%</span>
+                  <span className="probNo">NO {100 - yP}%</span>
+                </div>
+                <div className="probTrack">
+                  <div className="probFill" style={{ width: `${yP}%` }} />
+                </div>
+              </div>
+
+              <div className="mCardMeta">
+                <span>Deadline: <strong>{m.deadline_text}</strong></span>
+                <span>Pool: <strong>{fmt(m.yes_pool + m.no_pool)}</strong></span>
+              </div>
+
+              {m.resolved && (
+                <div className="miniChecklist">
+                  {CHECKLIST.map((c) => (
+                    <span
+                      key={c.key}
+                      className={`miniCheck ${m.checklist[c.key] ? "pass" : "fail"}`}
+                      title={c.key}
+                    >
+                      {m.checklist[c.key] ? "\u2713" : "\u2717"}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      <div className="txMeta">
-        <span>Hash</span>
-        <div className="hashRow">
-          <code>{shortHash(tx.hash)}</code>
-          <button className="smallButton" onClick={() => onCopy(tx.hash)} type="button">
-            Copy
-          </button>
-        </div>
-      </div>
-
-      <p className="tiny txMessage">{tx.message}</p>
-      {tx.result ? <p className="tiny">Result: {tx.result}</p> : null}
-      {tx.rounds ? <p className="tiny">Rounds: {tx.rounds}</p> : null}
-      {tx.error ? <p className="errorText">{tx.error}</p> : null}
-    </section>
-  );
-}
-
-export function MarketAdmin() {
-  const { address, client } = useWallet();
-
-  const [markets, setMarkets] = useState<MarketRecord[]>([]);
-  const [selectedMarketId, setSelectedMarketId] = useState("");
-  const [boardError, setBoardError] = useState("");
-  const [isLoadingBoard, setIsLoadingBoard] = useState(true);
-  const [positionError, setPositionError] = useState("");
-  const [positionState, setPositionState] = useState<PositionState | null>(null);
-  const [isLoadingPosition, setIsLoadingPosition] = useState(false);
-  const [traderAddress, setTraderAddress] = useState("");
-  const [amount, setAmount] = useState("100");
-  const [txState, setTxState] = useState<TxPanelState | null>(null);
-  const [copyMessage, setCopyMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
-
-  // Auto-fill trader address when wallet connects
-  useEffect(() => {
-    if (address) {
-      setTraderAddress(address);
-    }
-  }, [address]);
-
-  async function sdkRead(functionName: string, args: unknown[]) {
-    const result = await client.readContract({
-      address: contractAddress,
-      functionName,
-      args: args as Parameters<typeof client.readContract>[0]["args"],
-    });
-    return result;
-  }
-
-  async function sdkReadWithRetry(functionName: string, args: unknown[], retries = 3, delayMs = 1500) {
-    let lastError: Error | null = null;
-    for (let attempt = 0; attempt < retries; attempt += 1) {
-      try {
-        return await sdkRead(functionName, args);
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error("Unknown read error");
-        if (attempt < retries - 1) await sleep(delayMs);
-      }
-    }
-    throw lastError || new Error("Read failed");
-  }
-
-  async function refreshMarkets() {
-    setIsLoadingBoard(true);
-    setBoardError("");
-    try {
-      const idsResult = await sdkReadWithRetry("get_market_ids", []);
-      let ids: string[];
-      if (idsResult instanceof Map) {
-        ids = Array.from(idsResult.values()).map(String);
-      } else if (Array.isArray(idsResult)) {
-        ids = idsResult.map(String);
-      } else if (typeof idsResult === "string") {
-        try {
-          const parsed = JSON.parse(idsResult);
-          ids = Array.isArray(parsed) ? parsed.map(String) : [];
-        } catch {
-          ids = [];
-        }
-      } else {
-        ids = [];
-      }
-      const nextMarkets = sortMarkets(
-        await Promise.all(
-          ids.map(async (marketId) => normalizeMarket(await sdkReadWithRetry("get_market", [marketId])))
-        )
-      );
-      setMarkets(nextMarkets);
-      setSelectedMarketId((current) => {
-        if (current && nextMarkets.some((m) => m.market_id === current)) return current;
-        return nextMarkets[0]?.market_id || "";
-      });
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setBoardError(detail);
-    } finally {
-      setIsLoadingBoard(false);
-    }
-  }
-
-  useEffect(() => {
-    void refreshMarkets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    setPositionState(null);
-    setPositionError("");
-  }, [selectedMarketId]);
-
-  const selectedMarket = markets.find((m) => m.market_id === selectedMarketId) || null;
-
-  function copyHash(hash: string) {
-    if (typeof navigator === "undefined" || !navigator.clipboard) {
-      setCopyMessage("Clipboard is not available in this browser.");
-      return;
-    }
-    void navigator.clipboard.writeText(hash).then(
-      () => setCopyMessage("Transaction hash copied."),
-      () => setCopyMessage("Could not copy the transaction hash.")
-    );
-  }
-
-  async function loadPosition() {
-    if (!selectedMarket || !traderAddress.trim()) {
-      setPositionState(null);
-      setPositionError("Enter a trader address to read position state.");
-      return;
-    }
-
-    setIsLoadingPosition(true);
-    setPositionError("");
-
-    try {
-      const [positionResult, quoteResult] = await Promise.all([
-        sdkReadWithRetry("get_position", [selectedMarket.market_id, traderAddress.trim()]),
-        sdkReadWithRetry("quote_claim", [selectedMarket.market_id, traderAddress.trim()])
-      ]);
-      setPositionState({
-        record: normalizePosition(positionResult),
-        claimable: toNumber(quoteResult)
-      });
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : "Unknown error";
-      setPositionState(null);
-      setPositionError(detail);
-    } finally {
-      setIsLoadingPosition(false);
-    }
-  }
-
-  function submitWrite(functionName: string, args: unknown[], actionLabel: string) {
-    if (!address) return;
-
-    startTransition(async () => {
-      let submittedHash = "";
-      setCopyMessage("");
-      setTxState({
-        action: actionLabel,
-        hash: "",
-        status: "PENDING",
-        message: `Submitting ${actionLabel.toLowerCase()}...`
-      });
-
-      try {
-        const txHash = await client.writeContract({
-          address: contractAddress,
-          functionName,
-          args: args as Parameters<typeof client.writeContract>[0]["args"],
-          value: BigInt(0),
-        });
-        submittedHash = txHash;
-        setTxState({
-          action: actionLabel,
-          hash: txHash,
-          status: "PENDING",
-          message: "Submitted to GenLayer. Waiting for validator progress..."
-        });
-
-        // Poll for finalization
-        for (let attempt = 0; attempt < 40; attempt += 1) {
-          const tx = await client.getTransaction({ hash: txHash });
-          const status = (tx as unknown as Record<string, unknown>).status as TxStatus
-            ?? (tx as unknown as Record<string, unknown>).statusName as TxStatus
-            ?? "PENDING";
-
-          setTxState({
-            action: actionLabel,
-            hash: txHash,
-            status,
-            message: `Current status: ${status}`
-          });
-
-          if (
-            status === "FINALIZED" ||
-            status === "FAILED" ||
-            status === "CANCELED" ||
-            status === "UNDETERMINED"
-          ) {
-            if (status !== "FINALIZED") {
-              setTxState({
-                action: actionLabel,
-                hash: txHash,
-                status,
-                message: `Transaction ended in ${status}.`,
-                error: `The transaction did not finalize successfully.`
-              });
-              return;
-            }
-            break;
-          }
-
-          await sleep(3000);
-        }
-
-        setTxState({
-          action: actionLabel,
-          hash: txHash,
-          status: "FINALIZED",
-          message: "Finalized on GenLayer."
-        });
-
-        await refreshMarkets();
-        if (selectedMarketId && traderAddress.trim()) {
-          await loadPosition();
-        }
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : "Unknown error";
-        setTxState({
-          action: actionLabel,
-          hash: submittedHash,
-          status: "FAILED",
-          message: "Write path failed.",
-          error: detail
-        });
-      }
-    });
-  }
-
-  return (
-    <section className="sectionSpacing" id="market-board">
-      <div className="sectionHeader sectionHeaderSpacious">
-        <div>
-          <p className="cardLabel">Live Market Board</p>
-          <h2>Markets resolved by live public evidence</h2>
-        </div>
-        <div className="headerRight">
-          <WalletButton />
-          <div className="contractMeta">
-            <span>Contract</span>
-            <code>{shortHash(contractAddress)}</code>
-          </div>
-        </div>
-      </div>
-
-      <p className="sectionNote sectionIntro">
-        Connect your wallet to take positions and claim winnings. Reads work without a wallet.
-      </p>
-
-      {boardError ? <div className="errorBanner">{boardError}</div> : null}
-      {copyMessage ? <div className="infoBanner">{copyMessage}</div> : null}
-
-      <div className="boardGrid">
-        <section className="card marketBoardPanel">
-          <div className="listHeader">
-            <h3>Markets</h3>
-            <span className="tiny">
-              {isLoadingBoard ? "Refreshing..." : `${markets.length} live markets`}
-            </span>
-          </div>
-
-          <div className="marketListBoard">
-            {isLoadingBoard ? <div className="emptyState">Loading live market state...</div> : null}
-            {!isLoadingBoard && !markets.length ? (
-              <div className="emptyState">No live markets found.</div>
-            ) : null}
-
-            {markets.map((market) => (
-              <button
-                className={
-                  market.market_id === selectedMarketId
-                    ? "marketCardButton isSelected"
-                    : "marketCardButton"
-                }
-                key={market.market_id}
-                onClick={() => setSelectedMarketId(market.market_id)}
-                type="button"
-              >
-                <div className="marketCardTop">
-                  <div>
-                    <p className="marketProject">{market.project_name}</p>
-                    <h3>{market.question}</h3>
-                  </div>
-                  <span className={`pill ${marketStatusTone(market)}`}>
-                    {marketStatusLabel(market)}
-                  </span>
-                </div>
-
-                <div className="marketCardStats">
-                  <div>
-                    <span>Deadline</span>
-                    <strong>{market.deadline_text}</strong>
-                  </div>
-                  <div>
-                    <span>YES pool</span>
-                    <strong>{formatCredits(market.yes_pool)}</strong>
-                  </div>
-                  <div>
-                    <span>NO pool</span>
-                    <strong>{formatCredits(market.no_pool)}</strong>
-                  </div>
-                </div>
-
-                {market.resolved ? (
-                  <ChecklistGrid checklist={market.checklist} compact />
-                ) : (
-                  <p className="tiny pendingCopy">
-                    Open market. Resolution checklist will populate after settlement.
-                  </p>
-                )}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="card detailPanel">
-          {!selectedMarket ? (
-            <div className="emptyState">Select a market to inspect live state and actions.</div>
-          ) : (
-            <>
-              <div className="detailHeader">
-                <div>
-                  <p className="cardLabel">{selectedMarket.project_name}</p>
-                  <h2>{selectedMarket.question}</h2>
-                </div>
-                <span className={`pill ${marketStatusTone(selectedMarket)}`}>
-                  {marketStatusLabel(selectedMarket)}
-                </span>
-              </div>
-
-              <div className="detailMetaGrid">
-                <div className="metaStat">
-                  <span>Milestone</span>
-                  <strong>{selectedMarket.milestone_text}</strong>
-                </div>
-                <div className="metaStat">
-                  <span>Deadline</span>
-                  <strong>{selectedMarket.deadline_text}</strong>
-                </div>
-                <div className="metaStat">
-                  <span>YES pool</span>
-                  <strong>{formatCredits(selectedMarket.yes_pool)}</strong>
-                </div>
-                <div className="metaStat">
-                  <span>NO pool</span>
-                  <strong>{formatCredits(selectedMarket.no_pool)}</strong>
-                </div>
-                <div className="metaStat">
-                  <span>Fee</span>
-                  <strong>{selectedMarket.fee_bps} bps</strong>
-                </div>
-                <div className="metaStat">
-                  <span>Fee amount</span>
-                  <strong>{formatCredits(selectedMarket.fee_amount)}</strong>
-                </div>
-              </div>
-
-              <section className="subsection">
-                <div className="subsectionHeader">
-                  <h3>Evidence URLs</h3>
-                  <p className="tiny">
-                    These are the live sources the contract reads at resolution time.
-                  </p>
-                </div>
-                <div className="linkGrid">
-                  <a
-                    className="evidenceLink"
-                    href={selectedMarket.product_url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span>Product</span>
-                    <strong>{selectedMarket.product_url}</strong>
-                  </a>
-                  <a
-                    className="evidenceLink"
-                    href={selectedMarket.docs_url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span>Docs</span>
-                    <strong>{selectedMarket.docs_url}</strong>
-                  </a>
-                  <a
-                    className="evidenceLink"
-                    href={selectedMarket.repo_url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span>Repo</span>
-                    <strong>{selectedMarket.repo_url}</strong>
-                  </a>
-                  <a
-                    className="evidenceLink"
-                    href={selectedMarket.chain_url}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span>Chain</span>
-                    <strong>{selectedMarket.chain_url}</strong>
-                  </a>
-                </div>
-              </section>
-
-              <section className="subsection resolutionPanel">
-                <div className="subsectionHeader">
-                  <h3>Resolution checklist</h3>
-                  <p className="tiny">
-                    Validators compare exact booleans against the same evidence. This is the
-                    differentiator, not a hidden implementation detail.
-                  </p>
-                </div>
-                {selectedMarket.resolved ? (
-                  <>
-                    <ChecklistGrid checklist={selectedMarket.checklist} />
-                    {selectedMarket.notes ? (
-                      <p className="resolutionNotes">{selectedMarket.notes}</p>
-                    ) : null}
-                  </>
-                ) : (
-                  <div className="emptyState subtle">
-                    Checklist results will appear here after GenLayer resolves the market.
-                  </div>
-                )}
-              </section>
-
-              <section className="subsection">
-                <div className="subsectionHeader">
-                  <h3>Trader position</h3>
-                  <p className="tiny">
-                    Read live balances and claimable payout for any address.
-                  </p>
-                </div>
-                <div className="formRow">
-                  <input
-                    onChange={(event) => setTraderAddress(event.target.value)}
-                    placeholder="0x..."
-                    value={traderAddress}
-                  />
-                  <button
-                    className="secondaryButton"
-                    disabled={isLoadingPosition || isPending}
-                    onClick={() => void loadPosition()}
-                    type="button"
-                  >
-                    {isLoadingPosition ? "Loading..." : "Load position"}
-                  </button>
-                </div>
-
-                {positionError ? <p className="errorText">{positionError}</p> : null}
-                {positionState ? (
-                  <div className="positionGrid">
-                    <div className="metaStat">
-                      <span>YES balance</span>
-                      <strong>{formatCredits(positionState.record.yes_amount)}</strong>
-                    </div>
-                    <div className="metaStat">
-                      <span>NO balance</span>
-                      <strong>{formatCredits(positionState.record.no_amount)}</strong>
-                    </div>
-                    <div className="metaStat">
-                      <span>Claimable</span>
-                      <strong>{formatCredits(positionState.claimable)}</strong>
-                    </div>
-                    <div className="metaStat">
-                      <span>Claimed</span>
-                      <strong>{positionState.record.claimed ? "true" : "false"}</strong>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="emptyState subtle">No position loaded yet.</div>
-                )}
-              </section>
-
-              <section className="subsection">
-                <div className="subsectionHeader">
-                  <h3>Market actions</h3>
-                  <p className="tiny">
-                    {address
-                      ? "Sign transactions directly with your wallet."
-                      : "Connect your wallet to take actions."}
-                  </p>
-                </div>
-                {!address ? (
-                  <div className="emptyState subtle">
-                    Connect your wallet above to buy positions, resolve markets, or claim winnings.
-                  </div>
-                ) : (
-                  <div className="actionControls">
-                    <div className="formRow">
-                      <input
-                        onChange={(event) => setAmount(event.target.value)}
-                        placeholder="Amount"
-                        value={amount}
-                      />
-                    </div>
-                    <div className="buttonRow">
-                      <button
-                        className="positiveButton"
-                        disabled={isPending}
-                        onClick={() =>
-                          submitWrite(
-                            "buy_yes",
-                            [selectedMarket.market_id, Number(amount)],
-                            "Buy YES"
-                          )
-                        }
-                        type="button"
-                      >
-                        {isPending ? "Working..." : "Buy YES"}
-                      </button>
-                      <button
-                        className="dangerButton"
-                        disabled={isPending}
-                        onClick={() =>
-                          submitWrite(
-                            "buy_no",
-                            [selectedMarket.market_id, Number(amount)],
-                            "Buy NO"
-                          )
-                        }
-                        type="button"
-                      >
-                        {isPending ? "Working..." : "Buy NO"}
-                      </button>
-                      {!selectedMarket.resolved ? (
-                        <button
-                          className="warnButton"
-                          disabled={isPending}
-                          onClick={() =>
-                            submitWrite(
-                              "resolve_market",
-                              [selectedMarket.market_id],
-                              "Resolve Market"
-                            )
-                          }
-                          type="button"
-                        >
-                          {isPending ? "Working..." : "Resolve"}
-                        </button>
-                      ) : null}
-                      {selectedMarket.resolved ? (
-                        <button
-                          className="secondaryButton"
-                          disabled={isPending || Boolean(positionState?.record.claimed)}
-                          onClick={() =>
-                            submitWrite("claim", [selectedMarket.market_id], "Claim Winnings")
-                          }
-                          type="button"
-                        >
-                          {positionState?.record.claimed
-                            ? "Already claimed"
-                            : isPending
-                              ? "Working..."
-                              : "Claim"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              <TransactionTracker onCopy={copyHash} tx={txState} />
-            </>
-          )}
-        </section>
-      </div>
-    </section>
+      {/* Detail modal */}
+      {selected && (
+        <MarketDetail
+          key={selected.market_id}
+          market={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </>
   );
 }

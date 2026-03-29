@@ -2,7 +2,7 @@
 
 import { useWallet } from "../../lib/wallet-context";
 
-function shortAddress(addr: string) {
+function shortAddr(addr: string) {
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
@@ -12,8 +12,9 @@ export function WalletButton() {
   if (address) {
     return (
       <div className="walletConnected">
-        <span className="walletAddress">{shortAddress(address)}</span>
-        <button className="smallButton" onClick={disconnect} type="button">
+        <span className="walletDot" />
+        <span className="walletAddr">{shortAddr(address)}</span>
+        <button className="walletDisconnect" onClick={disconnect} type="button">
           Disconnect
         </button>
       </div>
@@ -21,16 +22,16 @@ export function WalletButton() {
   }
 
   return (
-    <div className="walletConnect">
+    <>
       <button
-        className="connectButton"
+        className="connectBtn"
         disabled={isConnecting}
         onClick={() => void connect()}
         type="button"
       >
         {isConnecting ? "Connecting..." : "Connect Wallet"}
       </button>
-      {error ? <p className="errorText walletError">{error}</p> : null}
-    </div>
+      {error ? <p className="walletError">{error}</p> : null}
+    </>
   );
 }
