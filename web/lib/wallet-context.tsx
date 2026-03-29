@@ -32,7 +32,7 @@ interface WalletState {
   disconnect: () => void;
 }
 
-const CHAIN_ID_HEX = "0xF21F"; // 61999
+const CHAIN_ID_HEX = "0xF22F"; // 61999
 
 const anonClient = createClient({ chain: studionet });
 
