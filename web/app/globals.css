@@ -16,6 +16,15 @@
   --color-amber-dim: rgba(245, 158, 11, 0.12);
   --color-cyan: #06b6d4;
   --color-cyan-dim: rgba(6, 182, 212, 0.10);
+  /* Light-mode accent tokens */
+  --color-emerald: #059669;
+  --color-emerald-dim: rgba(5, 150, 105, 0.10);
+  --color-rose: #e11d48;
+  --color-rose-dim: rgba(225, 29, 72, 0.08);
+  --color-light-surface: #ffffff;
+  --color-light-surface-1: #f9fafb;
+  --color-light-surface-2: #f4f5f7;
+  --color-light-surface-3: #e5e7eb;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", "Consolas", monospace;
   --font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -28,30 +37,54 @@ html {
 }
 
 body {
-  background: var(--color-terminal);
-  color: #fafafa;
   font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-::selection {
+/* Dark base (applied via .dark class from next-themes) */
+.dark body,
+html.dark body {
+  background: var(--color-terminal);
+  color: #fafafa;
+}
+
+/* Light base */
+html:not(.dark) body {
+  background: #ffffff;
+  color: #18181b;
+}
+
+/* ── Selection ──────────────────────────────────────────── */
+.dark ::selection {
   background: rgba(57, 255, 20, 0.2);
   color: #fff;
+}
+html:not(.dark) ::selection {
+  background: rgba(5, 150, 105, 0.15);
+  color: #18181b;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+.dark ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #555; }
+html:not(.dark) ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 
 /* ── Animated gradient text ──────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(90deg, var(--color-neon), var(--color-cyan), var(--color-neon));
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gradient-shift 4s linear infinite;
+}
+.dark .gradient-text {
+  background-image: linear-gradient(90deg, var(--color-neon), var(--color-cyan), var(--color-neon));
+}
+html:not(.dark) .gradient-text {
+  background-image: linear-gradient(90deg, var(--color-emerald), #0284c7, var(--color-emerald));
 }
 
 @keyframes gradient-shift {
@@ -59,10 +92,14 @@ body {
   100% { background-position: 200% center; }
 }
 
-/* ── Glow utilities ──────────────────────────────────────── */
-.glow-neon { box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), 0 0 60px rgba(57, 255, 20, 0.05); }
-.glow-crimson { box-shadow: 0 0 20px rgba(239, 68, 68, 0.15), 0 0 60px rgba(239, 68, 68, 0.05); }
-.glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.15), 0 0 60px rgba(6, 182, 212, 0.05); }
+/* ── Glow utilities (dark only) ─────────────────────────── */
+.dark .glow-neon { box-shadow: 0 0 20px rgba(57, 255, 20, 0.15), 0 0 60px rgba(57, 255, 20, 0.05); }
+.dark .glow-crimson { box-shadow: 0 0 20px rgba(239, 68, 68, 0.15), 0 0 60px rgba(239, 68, 68, 0.05); }
+.dark .glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.15), 0 0 60px rgba(6, 182, 212, 0.05); }
+/* Light mode: subtle shadows instead of glows */
+html:not(.dark) .glow-neon,
+html:not(.dark) .glow-crimson,
+html:not(.dark) .glow-cyan { box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04); }
 
 /* ── Skeleton animation ──────────────────────────────────── */
 @keyframes shimmer {
@@ -70,8 +107,14 @@ body {
   100% { background-position: 200% 0; }
 }
 
-.skeleton {
+.dark .skeleton {
   background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+html:not(.dark) .skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 6px;
@@ -84,8 +127,9 @@ body {
 }
 
 .cursor-blink::after {
-  content: "█";
+  content: "\2588";
   animation: blink 1s step-end infinite;
-  color: var(--color-neon);
   margin-left: 2px;
 }
+.dark .cursor-blink::after { color: var(--color-neon); }
+html:not(.dark) .cursor-blink::after { color: var(--color-emerald); }

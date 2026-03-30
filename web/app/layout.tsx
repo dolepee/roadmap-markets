@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { WalletProvider } from "../lib/wallet-context";
+import { ThemeProvider } from "./components/theme-provider";
 
 export const metadata: Metadata = {
   title: "Roadmap Markets — Trade whether crypto teams actually ship",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -26,8 +27,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-terminal text-zinc-50 antialiased">
-        <WalletProvider>{children}</WalletProvider>
+      <body className="bg-white text-zinc-900 antialiased dark:bg-terminal dark:text-zinc-50">
+        <ThemeProvider>
+          <WalletProvider>{children}</WalletProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -27,13 +27,13 @@ export default function HomePage() {
         <WhyGenLayer />
 
         {/* Footer */}
-        <footer className="border-t border-zinc-800/60 px-6 py-8">
+        <footer className="border-t border-zinc-200 px-6 py-8 dark:border-zinc-800/60">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
-            <span className="text-sm text-zinc-600">
+            <span className="text-sm text-zinc-400 dark:text-zinc-600">
               Roadmap Markets &middot; GenLayer Bradbury Hackathon
             </span>
             {CONTRACT && (
-              <code className="font-mono text-xs text-zinc-700">
+              <code className="font-mono text-xs text-zinc-400 dark:text-zinc-700">
                 {shortContract(CONTRACT)}
               </code>
             )}
