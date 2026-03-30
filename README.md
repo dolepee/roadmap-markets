@@ -20,6 +20,7 @@ Current MVP shape:
 - GenLayer resolves milestone delivery from live evidence
 - winners claim from a simple pari-mutuel pool
 - frontend uses `genlayer-js` client-side SDK — users sign transactions directly with their wallet
+- there is no server-side contract bridge in the live app; contract reads/writes happen directly from the client through `genlayer-js`
 
 Wallet integration:
 
