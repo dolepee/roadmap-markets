@@ -27,7 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-zinc-50 text-zinc-900 antialiased dark:bg-black dark:text-zinc-100">
+      <body className="bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50">
         <ThemeProvider>
           <WalletProvider>{children}</WalletProvider>
         </ThemeProvider>

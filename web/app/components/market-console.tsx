@@ -40,7 +40,7 @@ const steps: Array<{
 
 export function HowItWorks() {
   return (
-    <section className="border-t border-zinc-200 px-6 py-20 md:py-28 dark:border-zinc-800/60" id="how-it-works">
+    <section className="border-t border-zinc-200 px-6 py-20 md:py-28 dark:border-zinc-800" id="how-it-works">
       <div className="mx-auto max-w-5xl">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -55,7 +55,7 @@ export function HowItWorks() {
         </motion.div>
 
         <div className="relative">
-          {/* Connecting line — crisp 1px light / neon glow dark */}
+          {/* Connecting line — light: zinc, dark: neon glow */}
           <div className="absolute left-6 top-0 hidden h-full w-px bg-zinc-300 md:left-1/2 md:block dark:bg-gradient-to-b dark:from-neon/40 dark:via-cyan/30 dark:to-transparent" />
 
           <div className="grid gap-6 md:gap-0">
@@ -77,7 +77,7 @@ export function HowItWorks() {
                   }`}
                 >
                   <div
-                    className={`inline-block rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-left shadow-sm transition-colors hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none dark:hover:border-zinc-700/60 ${
+                    className={`inline-block rounded-xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-surface-1 dark:shadow-none dark:hover:border-zinc-700 ${
                       i % 2 === 0 ? "md:ml-auto" : ""
                     }`}
                     style={{ maxWidth: 380 }}
@@ -87,7 +87,7 @@ export function HowItWorks() {
                         {s.icon}
                       </div>
                       <div>
-                        <span className="font-mono text-xs text-zinc-200 dark:text-emerald-500/20">
+                        <span className="font-mono text-xs text-zinc-300 dark:text-emerald-500/20">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
@@ -103,7 +103,7 @@ export function HowItWorks() {
 
                 {/* Center dot */}
                 <div className="hidden md:flex md:flex-col md:items-center">
-                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-300 bg-zinc-50 dark:border-neon/40 dark:bg-black">
+                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-300 bg-white dark:border-neon/40 dark:bg-black">
                     <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-neon dark:shadow-[0_0_8px_rgba(57,255,20,0.5)]" />
                   </div>
                 </div>
@@ -123,9 +123,9 @@ export function HowItWorks() {
 
 function TerminalWindow({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-emerald-500/30 dark:bg-[#0c0c0e] dark:shadow-[0_0_15px_rgba(20,255,0,0.1)]">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-emerald-500/30 dark:bg-[#0c0c0e] dark:shadow-[0_0_15px_rgba(20,255,0,0.1)]">
       {/* macOS title bar */}
-      <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/60">
+      <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
         <div className="flex gap-1.5">
           <div className="h-3 w-3 rounded-full bg-zinc-300 dark:bg-red-500/80" />
           <div className="h-3 w-3 rounded-full bg-zinc-300 dark:bg-yellow-500/80" />
@@ -156,7 +156,7 @@ function JsonLine({ indent, keyName, value, comma }: { indent: number; keyName: 
 
 export function WhyGenLayer() {
   return (
-    <section className="border-t border-zinc-200 px-6 py-20 md:py-28 dark:border-zinc-800/60" id="why-genlayer">
+    <section className="border-t border-zinc-200 px-6 py-20 md:py-28 dark:border-zinc-800" id="why-genlayer">
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -176,7 +176,7 @@ export function WhyGenLayer() {
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="rounded-xl border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
+            className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-surface-1 dark:shadow-none"
           >
             <h3 className="mb-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">
               Structured Resolution, Not Oracle Feeds
@@ -220,7 +220,7 @@ export function WhyGenLayer() {
                 <JsonLine indent={1} keyName="repo_or_chain_evidence" value="true" />
                 <div>{"}"}</div>
               </div>
-              <div className="mt-5 border-t border-zinc-200 pt-4 dark:border-zinc-800/60">
+              <div className="mt-5 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                 <p className="font-mono text-xs text-zinc-400 dark:text-zinc-600">
                   <span className="text-emerald-600 dark:text-emerald-400">// </span>
                   All four fields must be <span className="font-semibold text-emerald-600 dark:text-emerald-400">true</span> for
@@ -233,7 +233,7 @@ export function WhyGenLayer() {
               </div>
             </TerminalWindow>
 
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none">
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-surface-1 dark:shadow-none">
               <h3 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 Live Evidence, Not Sentiment
               </h3>
