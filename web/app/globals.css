@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* ── Tell Tailwind v4 to use .dark class, not OS prefers-color-scheme ── */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── Custom theme tokens ─────────────────────────────────── */
 @theme {
   /* Dark-mode cypherpunk palette */
