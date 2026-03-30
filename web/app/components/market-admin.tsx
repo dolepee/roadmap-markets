@@ -1081,7 +1081,7 @@ export function MarketBoard() {
       const readWithRetry = async (
         fn: () => Promise<unknown>,
         label: string,
-        attempts = 5,
+        attempts = 8,
       ) => {
         for (let i = 0; i < attempts; i++) {
           try {
@@ -1092,7 +1092,7 @@ export function MarketBoard() {
                 err instanceof Error ? err.message : `Failed to load ${label}`,
               );
             }
-            await sleep(1000 + i * 500);
+            await sleep(1500 + i * 1000);
           }
         }
         throw new Error(`Failed to load ${label}`);
@@ -1110,26 +1110,32 @@ export function MarketBoard() {
         ),
       );
 
-      const settled = await Promise.allSettled(
-        ids.map(async (id) => {
-          const market = normMarket(
-            await readWithRetry(
-              () =>
-                client.readContract({
-                  address: CONTRACT,
-                  functionName: "get_market",
-                  args: [id],
-                }),
-              id,
-            ),
-          );
-
-          return {
-            ...market,
-            market_id: normalizeMarketId(market.market_id) ?? id,
-          };
-        }),
-      );
+      // Fetch in batches of 3 to avoid overwhelming the RPC
+      const BATCH = 3;
+      const settled: PromiseSettledResult<MarketRecord>[] = [];
+      for (let b = 0; b < ids.length; b += BATCH) {
+        const batch = ids.slice(b, b + BATCH);
+        const results = await Promise.allSettled(
+          batch.map(async (id) => {
+            const market = normMarket(
+              await readWithRetry(
+                () =>
+                  client.readContract({
+                    address: CONTRACT,
+                    functionName: "get_market",
+                    args: [id],
+                  }),
+                id,
+              ),
+            );
+            return {
+              ...market,
+              market_id: normalizeMarketId(market.market_id) ?? id,
+            };
+          }),
+        );
+        settled.push(...results);
+      }
 
       const nextMarkets = settled.flatMap((result) =>
         result.status === "fulfilled" ? [result.value] : [],
@@ -1227,18 +1233,35 @@ export function MarketBoard() {
               : `${markets.length} markets on GenLayer Studio`}
           </p>
         </div>
-        <button
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 font-mono text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/50"
-          onClick={() => setShowCreate(true)}
-          type="button"
-        >
-          + Create
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 font-mono text-xs font-semibold text-zinc-500 transition-all hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-700 disabled:opacity-30 dark:border-zinc-800 dark:bg-surface-2 dark:text-zinc-400 dark:hover:bg-surface-3 dark:hover:text-zinc-200"
+            onClick={() => void refresh()}
+            disabled={loading}
+            type="button"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Refresh"}
+          </button>
+          <button
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 font-mono text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/50"
+            onClick={() => setShowCreate(true)}
+            type="button"
+          >
+            + Create
+          </button>
+        </div>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 font-mono text-sm text-rose-600 dark:border-crimson/20 dark:bg-crimson-dim dark:text-crimson">
-          {error}
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 dark:border-crimson/20 dark:bg-crimson-dim">
+          <span className="font-mono text-sm text-rose-600 dark:text-crimson">{error}</span>
+          <button
+            className="shrink-0 rounded-md bg-rose-100 px-3 py-1 font-mono text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-200 dark:bg-crimson/20 dark:text-crimson dark:hover:bg-crimson/30"
+            onClick={() => void refresh()}
+            type="button"
+          >
+            Retry
+          </button>
         </div>
       )}
 
