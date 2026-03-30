@@ -6,9 +6,17 @@ import { ArrowDown, Zap } from "lucide-react";
 export function Hero() {
   return (
     <section className="relative overflow-hidden px-6 pb-20 pt-24 md:pb-28 md:pt-32">
-      {/* Background grid */}
+      {/* Background grid — faint in both themes */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.03]"
+        className="pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(5,150,105,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(5,150,105,0.3) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 hidden opacity-[0.03] dark:block"
         style={{
           backgroundImage:
             "linear-gradient(rgba(57,255,20,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,0.3) 1px, transparent 1px)",
@@ -24,7 +32,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 dark:border-neon/15 dark:bg-neon/5"
+          className="mb-8 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 dark:border-emerald-500/30 dark:bg-neon/5"
         >
           <Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-neon" />
           <span className="text-xs font-semibold uppercase tracking-widest text-emerald-700 dark:text-neon">
@@ -78,18 +86,18 @@ export function Hero() {
           </a>
         </motion.div>
 
-        {/* Terminal line */}
+        {/* Terminal line — GitHub-style light / glowing dark */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mx-auto mt-14 max-w-lg rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-3 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
+          className="mx-auto mt-14 max-w-lg rounded-lg border border-zinc-200 bg-zinc-100 px-5 py-3 shadow-sm dark:border-emerald-500/30 dark:bg-surface-1 dark:shadow-[0_0_15px_rgba(20,255,0,0.1)]"
         >
           <p className="font-mono text-xs text-zinc-500 dark:text-zinc-500">
-            <span className="text-emerald-600 dark:text-neon">$</span>{" "}
-            <span className="text-zinc-600 dark:text-zinc-400">genlayer resolve</span>{" "}
+            <span className="text-emerald-600 dark:text-emerald-400">$</span>{" "}
+            <span className="text-zinc-700 dark:text-zinc-300">genlayer resolve</span>{" "}
             <span className="text-sky-600 dark:text-cyan">--market</span>{" "}
-            <span className="text-zinc-800 dark:text-zinc-300">ETH-PECTRA-Q2</span>{" "}
+            <span className="text-zinc-800 dark:text-emerald-400">ETH-PECTRA-Q2</span>{" "}
             <span className="text-zinc-400 dark:text-zinc-600">// deterministic, trustless</span>
           </p>
         </motion.div>

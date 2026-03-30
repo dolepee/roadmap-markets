@@ -268,7 +268,7 @@ function txStage(s: TxStatus) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800/60 dark:bg-surface-1">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-800/60 dark:bg-surface-1">
       <div className="mb-4 flex items-start justify-between">
         <div>
           <div className="skeleton mb-2 h-3 w-20" />
@@ -312,8 +312,8 @@ function TxTracker({
   if (!tx) return null;
   const stage = txStage(tx.status);
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden dark:border-zinc-800/60 dark:bg-surface-1">
-      <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-zinc-800/40">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50 overflow-hidden dark:border-zinc-800/60 dark:bg-surface-1">
+      <div className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/40">
         <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
           {tx.action}
         </span>
@@ -356,14 +356,14 @@ function TxTracker({
           ))}
         </div>
       </div>
-      <div className="border-t border-zinc-100 px-4 py-3 dark:border-zinc-800/40">
+      <div className="border-t border-zinc-200 px-4 py-3 dark:border-zinc-800/40">
         {tx.hash && (
           <div className="mb-1 flex items-center gap-2">
-            <code className="font-mono text-xs text-zinc-400 dark:text-zinc-500">
+            <code className="font-mono text-xs text-zinc-500 dark:text-zinc-500">
               {shortHash(tx.hash)}
             </code>
             <button
-              className="text-zinc-400 hover:text-sky-600 transition-colors dark:text-zinc-600 dark:hover:text-cyan"
+              className="text-zinc-400 transition-colors hover:text-sky-600 dark:text-zinc-600 dark:hover:text-cyan"
               onClick={() => onCopy(tx.hash)}
               type="button"
             >
@@ -465,12 +465,7 @@ function MarketDetail({
     startTransition(async () => {
       let hash = "";
       setCopyMsg("");
-      setTxState({
-        action: label,
-        hash: "",
-        status: "PENDING",
-        message: "Submitting...",
-      });
+      setTxState({ action: label, hash: "", status: "PENDING", message: "Submitting..." });
       try {
         hash = await client.writeContract({
           address: CONTRACT,
@@ -478,40 +473,21 @@ function MarketDetail({
           args: args as never,
           value: BigInt(0),
         });
-        setTxState({
-          action: label,
-          hash,
-          status: "PENDING",
-          message: "Waiting for validators...",
-        });
+        setTxState({ action: label, hash, status: "PENDING", message: "Waiting for validators..." });
         for (let i = 0; i < 40; i++) {
           const tx = await client.getTransaction({ hash: hash as never });
           const st = resolveStatus(tx as Record<string, unknown>);
           setTxState({ action: label, hash, status: st, message: `Status: ${st}` });
-          if (
-            ["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)
-          ) {
+          if (["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)) {
             if (st !== "FINALIZED")
-              setTxState({
-                action: label,
-                hash,
-                status: st,
-                message: `Ended: ${st}`,
-                error: "Transaction did not finalize.",
-              });
+              setTxState({ action: label, hash, status: st, message: `Ended: ${st}`, error: "Transaction did not finalize." });
             break;
           }
           await sleep(3000);
         }
         if (traderAddr.trim()) await loadPos();
       } catch (e) {
-        setTxState({
-          action: label,
-          hash,
-          status: "FAILED",
-          message: "Failed",
-          error: e instanceof Error ? e.message : "Unknown error",
-        });
+        setTxState({ action: label, hash, status: "FAILED", message: "Failed", error: e instanceof Error ? e.message : "Unknown error" });
       }
     });
   }
@@ -538,22 +514,20 @@ function MarketDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 dark:bg-black/70"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 dark:bg-black/70"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="flex max-h-[90vh] w-full max-w-[960px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
+        className="flex max-h-[90vh] w-full max-w-[960px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-xl dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-[0_0_40px_rgba(0,0,0,0.5)]"
       >
         {/* Header */}
-        <div className="relative border-b border-zinc-100 px-6 pb-5 pt-6 md:px-8 dark:border-zinc-800/40">
+        <div className="relative border-b border-zinc-200 px-6 pb-5 pt-6 md:px-8 dark:border-zinc-800/40">
           <button
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             onClick={onClose}
             type="button"
           >
@@ -575,11 +549,7 @@ function MarketDetail({
                     : "bg-rose-100 text-rose-600 dark:bg-crimson-dim dark:text-crimson"
               }`}
             >
-              {!market.resolved
-                ? "Open"
-                : market.resolution === "YES"
-                  ? "Resolved YES"
-                  : "Resolved NO"}
+              {!market.resolved ? "Open" : market.resolution === "YES" ? "Resolved YES" : "Resolved NO"}
             </span>
             <span className="flex items-center gap-1.5 font-mono text-xs text-zinc-400 dark:text-zinc-600">
               <Clock className="h-3 w-3" />
@@ -596,14 +566,14 @@ function MarketDetail({
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "YES Pool", value: fmt(market.yes_pool), color: "text-emerald-600 dark:text-neon" },
+                  { label: "YES Pool", value: fmt(market.yes_pool), color: "text-emerald-600 dark:text-emerald-400" },
                   { label: "NO Pool", value: fmt(market.no_pool), color: "text-rose-600 dark:text-crimson" },
                   { label: "Total Volume", value: fmt(market.yes_pool + market.no_pool), color: "text-zinc-900 dark:text-zinc-100" },
                   { label: "Fee", value: `${market.fee_bps} bps`, color: "text-zinc-600 dark:text-zinc-300" },
                   { label: "Fee Collected", value: fmt(market.fee_amount), color: "text-zinc-600 dark:text-zinc-300" },
                   { label: "Milestone", value: market.milestone_text, color: "text-zinc-600 dark:text-zinc-300" },
                 ].map((s) => (
-                  <div key={s.label} className="rounded-lg bg-zinc-50 px-4 py-3 dark:bg-surface-2">
+                  <div key={s.label} className="rounded-lg bg-zinc-100 px-4 py-3 dark:bg-surface-2">
                     <span className="block font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
                       {s.label}
                     </span>
@@ -617,7 +587,7 @@ function MarketDetail({
               {/* Probability bar */}
               <div>
                 <div className="mb-2 flex justify-between font-mono text-xs font-bold">
-                  <span className="text-emerald-600 dark:text-neon">YES {yPct}%</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">YES {yPct}%</span>
                   <span className="text-rose-600 dark:text-crimson">NO {100 - yPct}%</span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full bg-rose-100 dark:bg-crimson/20">
@@ -640,7 +610,7 @@ function MarketDetail({
                   {evidenceLinks.map((ev) => (
                     <a
                       key={ev.label}
-                      className="group flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 transition-colors hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-surface-2 dark:hover:border-zinc-700"
+                      className="group flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2.5 transition-colors hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-surface-2 dark:hover:border-zinc-700"
                       href={ev.url || "#"}
                       target="_blank"
                       rel="noreferrer"
@@ -649,12 +619,8 @@ function MarketDetail({
                         {ev.icon}
                       </div>
                       <div className="min-w-0">
-                        <span className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                          {ev.label}
-                        </span>
-                        <span className="block truncate font-mono text-[10px] text-zinc-400 dark:text-zinc-600">
-                          {ev.url || "(none)"}
-                        </span>
+                        <span className="block text-xs font-semibold text-zinc-600 dark:text-zinc-300">{ev.label}</span>
+                        <span className="block truncate font-mono text-[10px] text-zinc-400 dark:text-zinc-600">{ev.url || "(none)"}</span>
                       </div>
                       <ExternalLink className="ml-auto h-3 w-3 shrink-0 text-zinc-300 group-hover:text-zinc-500 dark:text-zinc-700 dark:group-hover:text-zinc-500" />
                     </a>
@@ -675,7 +641,7 @@ function MarketDetail({
                         return (
                           <div
                             key={c.key}
-                            className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 dark:border-zinc-800/40 dark:bg-surface-2"
+                            className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-2.5 dark:border-zinc-800/40 dark:bg-surface-2"
                           >
                             <div
                               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
@@ -684,34 +650,25 @@ function MarketDetail({
                                   : "bg-rose-100 text-rose-600 dark:bg-crimson-dim dark:text-crimson"
                               }`}
                             >
-                              {pass ? (
-                                <Check className="h-3.5 w-3.5" />
-                              ) : (
-                                <XIcon className="h-3.5 w-3.5" />
-                              )}
+                              {pass ? <Check className="h-3.5 w-3.5" /> : <XIcon className="h-3.5 w-3.5" />}
                             </div>
                             <div>
-                              <span className="block font-mono text-xs text-zinc-600 dark:text-zinc-300">
-                                {c.key}
-                              </span>
-                              <span className="block text-[11px] text-zinc-400 dark:text-zinc-600">
-                                {c.label}
-                              </span>
+                              <span className="block font-mono text-xs text-zinc-600 dark:text-zinc-300">{c.key}</span>
+                              <span className="block text-[11px] text-zinc-400 dark:text-zinc-600">{c.label}</span>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                     {market.notes && (
-                      <p className="mt-3 rounded-lg bg-zinc-50 px-4 py-3 text-sm italic text-zinc-500 dark:bg-surface-2">
+                      <p className="mt-3 rounded-lg bg-zinc-100 px-4 py-3 text-sm italic text-zinc-500 dark:bg-surface-2 dark:text-zinc-400">
                         {market.notes}
                       </p>
                     )}
                   </>
                 ) : (
                   <div className="rounded-lg border border-dashed border-zinc-300 px-4 py-5 text-center font-mono text-xs text-zinc-400 dark:border-zinc-800 dark:text-zinc-600">
-                    Checklist results will appear after GenLayer resolves this
-                    market.
+                    Checklist results will appear after GenLayer resolves this market.
                   </div>
                 )}
               </div>
@@ -720,7 +677,7 @@ function MarketDetail({
             {/* ── Right column: trade panel ── */}
             <div className="w-full shrink-0 space-y-4 md:w-[340px] md:sticky md:top-0 md:self-start">
               {/* Trade box */}
-              <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-800/60 dark:bg-surface-2">
+              <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800/60 dark:bg-surface-2">
                 <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/40">
                   <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200">Trade</span>
                 </div>
@@ -731,9 +688,7 @@ function MarketDetail({
                 ) : (
                   <>
                     <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/40">
-                      <span className="font-mono text-xs text-zinc-400 dark:text-zinc-600">
-                        Amount
-                      </span>
+                      <span className="font-mono text-xs text-zinc-400 dark:text-zinc-600">Amount</span>
                       <input
                         className="min-w-0 flex-1 bg-transparent text-right font-mono text-2xl font-bold text-zinc-900 outline-none placeholder:text-zinc-300 dark:text-zinc-100 dark:placeholder:text-zinc-700"
                         value={amount}
@@ -743,58 +698,32 @@ function MarketDetail({
                         inputMode="numeric"
                       />
                     </div>
+                    {/* YES / NO buttons — tinted light, neon dark */}
                     <div className="grid grid-cols-2">
                       <button
-                        className="flex h-12 items-center justify-center gap-1.5 bg-emerald-500 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-neon dark:text-black"
+                        className="flex h-12 items-center justify-center gap-1.5 border-r border-zinc-200 bg-emerald-50 font-bold text-emerald-700 transition-all hover:bg-emerald-100 disabled:opacity-30 disabled:cursor-not-allowed dark:border-zinc-800/40 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
                         disabled={isPending || market.resolved}
-                        onClick={() =>
-                          doWrite(
-                            "buy_yes",
-                            [market.market_id, Number(amount)],
-                            "Buy YES",
-                          )
-                        }
+                        onClick={() => doWrite("buy_yes", [market.market_id, Number(amount)], "Buy YES")}
                         type="button"
                       >
-                        {isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>YES {yPct}%</>
-                        )}
+                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <>YES {yPct}%</>}
                       </button>
                       <button
-                        className="flex h-12 items-center justify-center gap-1.5 bg-rose-500 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-crimson"
+                        className="flex h-12 items-center justify-center gap-1.5 bg-rose-50 font-bold text-rose-700 transition-all hover:bg-rose-100 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-crimson/10 dark:text-crimson dark:hover:bg-crimson/20"
                         disabled={isPending || market.resolved}
-                        onClick={() =>
-                          doWrite(
-                            "buy_no",
-                            [market.market_id, Number(amount)],
-                            "Buy NO",
-                          )
-                        }
+                        onClick={() => doWrite("buy_no", [market.market_id, Number(amount)], "Buy NO")}
                         type="button"
                       >
-                        {isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>NO {100 - yPct}%</>
-                        )}
+                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <>NO {100 - yPct}%</>}
                       </button>
                     </div>
-                    {(!market.resolved ||
-                      (market.resolved && position)) && (
+                    {(!market.resolved || (market.resolved && position)) && (
                       <div className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800/40">
                         {!market.resolved && (
                           <button
                             className="flex-1 rounded-lg bg-amber-100 py-2.5 font-mono text-xs font-bold text-amber-700 transition-colors hover:bg-amber-200 disabled:opacity-30 dark:bg-amber-dim dark:text-amber dark:hover:bg-amber/20"
                             disabled={isPending}
-                            onClick={() =>
-                              doWrite(
-                                "resolve_market",
-                                [market.market_id],
-                                "Resolve Market",
-                              )
-                            }
+                            onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
                             type="button"
                           >
                             Resolve
@@ -803,16 +732,8 @@ function MarketDetail({
                         {market.resolved && (
                           <button
                             className="flex-1 rounded-lg bg-sky-100 py-2.5 font-mono text-xs font-bold text-sky-700 transition-colors hover:bg-sky-200 disabled:opacity-30 dark:bg-cyan-dim dark:text-cyan dark:hover:bg-cyan/20"
-                            disabled={
-                              isPending || Boolean(position?.claimed)
-                            }
-                            onClick={() =>
-                              doWrite(
-                                "claim",
-                                [market.market_id],
-                                "Claim Winnings",
-                              )
-                            }
+                            disabled={isPending || Boolean(position?.claimed)}
+                            onClick={() => doWrite("claim", [market.market_id], "Claim Winnings")}
                             type="button"
                           >
                             {position?.claimed ? "Claimed" : "Claim Winnings"}
@@ -833,7 +754,7 @@ function MarketDetail({
               <TxTracker tx={txState} onCopy={copyHash} />
 
               {/* Position */}
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800/60 dark:bg-surface-2">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-4 dark:border-zinc-800/60 dark:bg-surface-2">
                 <span className="mb-3 block text-sm font-bold text-zinc-700 dark:text-zinc-200">
                   Your Position
                 </span>
@@ -848,18 +769,14 @@ function MarketDetail({
                 {position && !posLoading && (
                   <div className="mb-3 grid grid-cols-2 gap-2">
                     {[
-                      { label: "YES", value: fmt(position.yes_amount), color: "text-emerald-600 dark:text-neon" },
+                      { label: "YES", value: fmt(position.yes_amount), color: "text-emerald-600 dark:text-emerald-400" },
                       { label: "NO", value: fmt(position.no_amount), color: "text-rose-600 dark:text-crimson" },
                       { label: "Claimable", value: fmt(claimable), color: "text-zinc-900 dark:text-zinc-100" },
                       { label: "Claimed", value: position.claimed ? "Yes" : "No", color: "text-zinc-500 dark:text-zinc-400" },
                     ].map((p) => (
-                      <div key={p.label} className="rounded-lg bg-white px-3 py-2 text-center dark:bg-surface-3">
-                        <span className="block font-mono text-[10px] uppercase text-zinc-400 dark:text-zinc-600">
-                          {p.label}
-                        </span>
-                        <span className={`block font-mono text-sm font-bold ${p.color}`}>
-                          {p.value}
-                        </span>
+                      <div key={p.label} className="rounded-lg bg-zinc-50 px-3 py-2 text-center dark:bg-surface-3">
+                        <span className="block font-mono text-[10px] uppercase text-zinc-400 dark:text-zinc-600">{p.label}</span>
+                        <span className={`block font-mono text-sm font-bold ${p.color}`}>{p.value}</span>
                       </div>
                     ))}
                   </div>
@@ -876,13 +793,13 @@ function MarketDetail({
                 )}
                 <div className="flex gap-2">
                   <input
-                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2 font-mono text-xs text-zinc-600 outline-none focus:border-sky-400 placeholder:text-zinc-300 dark:border-zinc-800 dark:bg-surface-3 dark:text-zinc-400 dark:focus:border-cyan dark:placeholder:text-zinc-700"
+                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-xs text-zinc-600 outline-none focus:border-sky-400 placeholder:text-zinc-300 dark:border-zinc-800 dark:bg-surface-3 dark:text-zinc-400 dark:focus:border-cyan dark:placeholder:text-zinc-700"
                     placeholder="Look up address..."
                     value={traderAddr}
                     onChange={(e) => setTraderAddr(e.target.value)}
                   />
                   <button
-                    className="shrink-0 rounded-lg bg-white px-3 py-2 font-mono text-xs font-semibold text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30 dark:bg-surface-3 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                    className="shrink-0 rounded-lg bg-zinc-50 px-3 py-2 font-mono text-xs font-semibold text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-700 disabled:opacity-30 dark:bg-surface-3 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
                     disabled={posLoading || isPending}
                     onClick={() => void loadPos()}
                     type="button"
@@ -925,9 +842,7 @@ function CreateMarketModal({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, []);
 
   function update(key: string, value: string) {
@@ -936,133 +851,46 @@ function CreateMarketModal({
 
   function submit() {
     if (!address) return;
-    const {
-      question,
-      project_name,
-      milestone_text,
-      deadline_text,
-      product_url,
-      docs_url,
-      repo_url,
-      chain_url,
-      fee_bps,
-    } = form;
+    const { question, project_name, milestone_text, deadline_text, product_url, docs_url, repo_url, chain_url, fee_bps } = form;
     if (!question.trim() || !project_name.trim()) return;
     startTransition(async () => {
       let hash = "";
-      setTxState({
-        action: "Create Market",
-        hash: "",
-        status: "PENDING",
-        message: "Submitting...",
-      });
+      setTxState({ action: "Create Market", hash: "", status: "PENDING", message: "Submitting..." });
       try {
         hash = await client.writeContract({
           address: CONTRACT,
           functionName: "create_market",
-          args: [
-            question,
-            project_name,
-            milestone_text,
-            deadline_text,
-            product_url,
-            docs_url,
-            repo_url,
-            chain_url,
-            Number(fee_bps),
-          ] as never,
+          args: [question, project_name, milestone_text, deadline_text, product_url, docs_url, repo_url, chain_url, Number(fee_bps)] as never,
           value: BigInt(0),
         });
-        setTxState({
-          action: "Create Market",
-          hash,
-          status: "PENDING",
-          message: "Waiting for validators...",
-        });
+        setTxState({ action: "Create Market", hash, status: "PENDING", message: "Waiting for validators..." });
         for (let i = 0; i < 40; i++) {
           const tx = await client.getTransaction({ hash: hash as never });
           const st = resolveStatus(tx as Record<string, unknown>);
-          setTxState({
-            action: "Create Market",
-            hash,
-            status: st,
-            message: `Status: ${st}`,
-          });
-          if (
-            ["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)
-          ) {
-            if (st === "FINALIZED") {
-              onCreated();
-              setTimeout(onClose, 1500);
-            } else {
-              setTxState({
-                action: "Create Market",
-                hash,
-                status: st,
-                message: `Ended: ${st}`,
-                error: "Transaction did not finalize.",
-              });
-            }
+          setTxState({ action: "Create Market", hash, status: st, message: `Status: ${st}` });
+          if (["FINALIZED", "FAILED", "CANCELED", "UNDETERMINED"].includes(st)) {
+            if (st === "FINALIZED") { onCreated(); setTimeout(onClose, 1500); }
+            else setTxState({ action: "Create Market", hash, status: st, message: `Ended: ${st}`, error: "Transaction did not finalize." });
             break;
           }
           await sleep(3000);
         }
       } catch (e) {
-        setTxState({
-          action: "Create Market",
-          hash,
-          status: "FAILED",
-          message: "Failed",
-          error: e instanceof Error ? e.message : "Unknown error",
-        });
+        setTxState({ action: "Create Market", hash, status: "FAILED", message: "Failed", error: e instanceof Error ? e.message : "Unknown error" });
       }
     });
   }
 
-  const fields: Array<{
-    key: string;
-    label: string;
-    placeholder: string;
-    full?: boolean;
-  }> = [
-    {
-      key: "question",
-      label: "Market Question",
-      placeholder: "Will [project] ship [feature] by [date]?",
-      full: true,
-    },
+  const fields: Array<{ key: string; label: string; placeholder: string; full?: boolean }> = [
+    { key: "question", label: "Market Question", placeholder: "Will [project] ship [feature] by [date]?", full: true },
     { key: "project_name", label: "Project", placeholder: "e.g. Ethereum" },
-    {
-      key: "milestone_text",
-      label: "Milestone",
-      placeholder: "e.g. Ship EIP-4844",
-    },
+    { key: "milestone_text", label: "Milestone", placeholder: "e.g. Ship EIP-4844" },
     { key: "deadline_text", label: "Deadline", placeholder: "e.g. Q2 2025" },
     { key: "fee_bps", label: "Fee (bps)", placeholder: "200" },
-    {
-      key: "product_url",
-      label: "Product URL",
-      placeholder: "https://...",
-      full: true,
-    },
-    {
-      key: "docs_url",
-      label: "Docs URL",
-      placeholder: "https://...",
-      full: true,
-    },
-    {
-      key: "repo_url",
-      label: "Repo URL",
-      placeholder: "https://github.com/...",
-      full: true,
-    },
-    {
-      key: "chain_url",
-      label: "Chain URL",
-      placeholder: "https://etherscan.io/...",
-      full: true,
-    },
+    { key: "product_url", label: "Product URL", placeholder: "https://...", full: true },
+    { key: "docs_url", label: "Docs URL", placeholder: "https://...", full: true },
+    { key: "repo_url", label: "Repo URL", placeholder: "https://github.com/...", full: true },
+    { key: "chain_url", label: "Chain URL", placeholder: "https://etherscan.io/...", full: true },
   ];
 
   return (
@@ -1070,28 +898,26 @@ function CreateMarketModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 dark:bg-black/70"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 dark:bg-black/70"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="flex max-h-[90vh] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
+        className="flex max-h-[90vh] w-full max-w-[640px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-xl dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-[0_0_40px_rgba(0,0,0,0.5)]"
       >
-        <div className="relative border-b border-zinc-100 px-6 pb-4 pt-6 dark:border-zinc-800/40">
+        <div className="relative border-b border-zinc-200 px-6 pb-4 pt-6 dark:border-zinc-800/40">
           <button
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             onClick={onClose}
             type="button"
           >
             <X className="h-5 w-5" />
           </button>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Create Market</h2>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Define a prediction market around a real roadmap milestone.
           </p>
         </div>
@@ -1104,15 +930,12 @@ function CreateMarketModal({
             <>
               <div className="mb-6 grid grid-cols-2 gap-4">
                 {fields.map((f) => (
-                  <div
-                    key={f.key}
-                    className={f.full ? "col-span-2" : ""}
-                  >
+                  <div key={f.key} className={f.full ? "col-span-2" : ""}>
                     <label className="mb-1.5 block font-mono text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
                       {f.label}
                     </label>
                     <input
-                      className="h-11 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-400 placeholder:text-zinc-300 dark:border-zinc-800 dark:bg-surface-2 dark:text-zinc-200 dark:focus:border-neon/40 dark:placeholder:text-zinc-700"
+                      className="h-11 w-full rounded-lg border border-zinc-200 bg-zinc-100 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-400 placeholder:text-zinc-300 dark:border-zinc-800 dark:bg-surface-2 dark:text-zinc-200 dark:focus:border-emerald-500/50 dark:placeholder:text-zinc-700"
                       value={form[f.key as keyof typeof form]}
                       onChange={(e) => update(f.key, e.target.value)}
                       placeholder={f.placeholder}
@@ -1122,31 +945,18 @@ function CreateMarketModal({
                 ))}
               </div>
               <button
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-neon dark:text-black dark:hover:shadow-[0_0_20px_rgba(57,255,20,0.2)]"
-                disabled={
-                  isPending ||
-                  !form.question.trim() ||
-                  !form.project_name.trim()
-                }
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700 disabled:opacity-30 disabled:cursor-not-allowed dark:bg-neon dark:text-black dark:hover:shadow-[0_0_20px_rgba(57,255,20,0.2)]"
+                disabled={isPending || !form.question.trim() || !form.project_name.trim()}
                 onClick={submit}
                 type="button"
               >
-                {isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Creating...
-                  </>
-                ) : (
-                  "Create Market"
-                )}
+                {isPending ? (<><Loader2 className="h-4 w-4 animate-spin" /> Creating...</>) : "Create Market"}
               </button>
             </>
           )}
           {txState && (
             <div className="mt-4">
-              <TxTracker
-                tx={txState}
-                onCopy={(h) => navigator.clipboard?.writeText(h)}
-              />
+              <TxTracker tx={txState} onCopy={(h) => navigator.clipboard?.writeText(h)} />
             </div>
           )}
         </div>
@@ -1173,10 +983,10 @@ function MarketCard({
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className={`group cursor-pointer rounded-xl border bg-white p-5 shadow-sm transition-all dark:bg-surface-1 dark:shadow-none ${
+      className={`group cursor-pointer rounded-xl border p-5 shadow-sm transition-all bg-zinc-50 dark:bg-surface-1 dark:shadow-none ${
         isSelected
           ? "border-sky-400 shadow-[0_0_0_1px_rgb(56,189,248)] dark:border-cyan dark:shadow-[0_0_0_1px_var(--color-cyan),0_0_24px_rgba(6,182,212,0.1)]"
-          : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800/60 dark:hover:border-zinc-700/60"
+          : "border-zinc-200 hover:border-zinc-300 hover:shadow-md dark:border-zinc-800/60 dark:hover:border-zinc-700/60 dark:hover:shadow-[0_0_20px_rgba(6,182,212,0.05)]"
       }`}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -1197,18 +1007,14 @@ function MarketCard({
                 : "bg-rose-100 text-rose-600 dark:bg-crimson-dim dark:text-crimson"
           }`}
         >
-          {!market.resolved
-            ? "Open"
-            : market.resolution === "YES"
-              ? "YES"
-              : "NO"}
+          {!market.resolved ? "Open" : market.resolution === "YES" ? "YES" : "NO"}
         </span>
       </div>
 
       {/* Prob bar */}
       <div className="mb-3">
         <div className="mb-1.5 flex justify-between font-mono text-[11px] font-bold">
-          <span className="text-emerald-600 dark:text-neon">YES {yP}%</span>
+          <span className="text-emerald-600 dark:text-emerald-400">YES {yP}%</span>
           <span className="text-rose-600 dark:text-crimson">NO {100 - yP}%</span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-rose-100 dark:bg-crimson/15">
@@ -1364,10 +1170,7 @@ export function MarketBoard() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const totalPool = markets.reduce(
-    (s, m) => s + m.yes_pool + m.no_pool,
-    0,
-  );
+  const totalPool = markets.reduce((s, m) => s + m.yes_pool + m.no_pool, 0);
   const resolvedCount = markets.filter((m) => m.resolved).length;
 
   return (
@@ -1387,9 +1190,9 @@ export function MarketBoard() {
           ].map((s) => (
             <div
               key={s.label}
-              className="flex items-center gap-3 bg-white px-5 py-4 dark:bg-surface-1"
+              className="flex items-center gap-3 bg-zinc-50 px-5 py-4 dark:bg-surface-1"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-50 dark:bg-surface-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-100 dark:bg-surface-2">
                 {s.icon}
               </div>
               <div>
@@ -1418,7 +1221,7 @@ export function MarketBoard() {
           </p>
         </div>
         <button
-          className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 font-mono text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 dark:border-neon/20 dark:bg-neon/5 dark:text-neon dark:hover:bg-neon/10 dark:hover:border-neon/30"
+          className="flex h-9 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 font-mono text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/50"
           onClick={() => setShowCreate(true)}
           type="button"
         >

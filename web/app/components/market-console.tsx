@@ -49,14 +49,14 @@ export function HowItWorks() {
           className="mb-14 text-center"
         >
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl dark:text-zinc-50">How It Works</h2>
-          <p className="mt-3 text-zinc-500">
+          <p className="mt-3 text-zinc-500 dark:text-zinc-400">
             Four steps from market creation to payout.
           </p>
         </motion.div>
 
         <div className="relative">
-          {/* Connecting line */}
-          <div className="absolute left-6 top-0 hidden h-full w-px bg-gradient-to-b from-zinc-300 via-zinc-200 to-transparent md:left-1/2 md:block dark:from-neon/40 dark:via-cyan/30 dark:to-transparent" />
+          {/* Connecting line — crisp 1px light / neon glow dark */}
+          <div className="absolute left-6 top-0 hidden h-full w-px bg-zinc-300 md:left-1/2 md:block dark:bg-gradient-to-b dark:from-neon/40 dark:via-cyan/30 dark:to-transparent" />
 
           <div className="grid gap-6 md:gap-0">
             {steps.map((s, i) => (
@@ -77,7 +77,7 @@ export function HowItWorks() {
                   }`}
                 >
                   <div
-                    className={`inline-block rounded-xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-colors hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none dark:hover:border-zinc-700/60 ${
+                    className={`inline-block rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-left shadow-sm transition-colors hover:border-zinc-300 dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none dark:hover:border-zinc-700/60 ${
                       i % 2 === 0 ? "md:ml-auto" : ""
                     }`}
                     style={{ maxWidth: 380 }}
@@ -87,7 +87,7 @@ export function HowItWorks() {
                         {s.icon}
                       </div>
                       <div>
-                        <span className="font-mono text-xs text-zinc-300 dark:text-zinc-600">
+                        <span className="font-mono text-xs text-zinc-200 dark:text-emerald-500/20">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
@@ -95,7 +95,7 @@ export function HowItWorks() {
                         </h3>
                       </div>
                     </div>
-                    <p className="text-sm leading-relaxed text-zinc-500">
+                    <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                       {s.desc}
                     </p>
                   </div>
@@ -103,7 +103,7 @@ export function HowItWorks() {
 
                 {/* Center dot */}
                 <div className="hidden md:flex md:flex-col md:items-center">
-                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-300 bg-white dark:border-neon/40 dark:bg-terminal">
+                  <div className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-zinc-300 bg-zinc-50 dark:border-neon/40 dark:bg-black">
                     <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-neon dark:shadow-[0_0_8px_rgba(57,255,20,0.5)]" />
                   </div>
                 </div>
@@ -123,7 +123,7 @@ export function HowItWorks() {
 
 function TerminalWindow({ children, title }: { children: ReactNode; title: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 shadow-sm dark:border-zinc-800/80 dark:bg-[#0c0c0e] dark:shadow-2xl dark:glow-cyan">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm dark:border-emerald-500/30 dark:bg-[#0c0c0e] dark:shadow-[0_0_15px_rgba(20,255,0,0.1)]">
       {/* macOS title bar */}
       <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800/60">
         <div className="flex gap-1.5">
@@ -144,7 +144,7 @@ function JsonLine({ indent, keyName, value, comma }: { indent: number; keyName: 
     <div style={{ paddingLeft: indent * 20 }} className="font-mono text-sm leading-7">
       <span className="text-sky-600 dark:text-cyan">&quot;{keyName}&quot;</span>
       <span className="text-zinc-400 dark:text-zinc-600">: </span>
-      <span className={value === "true" ? "text-emerald-600 font-semibold dark:text-neon dark:font-semibold" : "text-rose-600 font-semibold dark:text-crimson dark:font-semibold"}>
+      <span className={value === "true" ? "font-semibold text-emerald-600 dark:text-emerald-400" : "font-semibold text-rose-600 dark:text-crimson"}>
         {value}
       </span>
       {comma && <span className="text-zinc-400 dark:text-zinc-600">,</span>}
@@ -165,7 +165,7 @@ export function WhyGenLayer() {
           className="mb-14 text-center"
         >
           <h2 className="text-3xl font-bold tracking-tight text-zinc-900 md:text-4xl dark:text-zinc-50">Why GenLayer</h2>
-          <p className="mt-3 text-zinc-500">
+          <p className="mt-3 text-zinc-500 dark:text-zinc-400">
             The resolution layer is the product, not the UI.
           </p>
         </motion.div>
@@ -176,7 +176,7 @@ export function WhyGenLayer() {
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
+            className="rounded-xl border border-zinc-200 bg-zinc-50 p-8 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none"
           >
             <h3 className="mb-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">
               Structured Resolution, Not Oracle Feeds
@@ -197,7 +197,7 @@ export function WhyGenLayer() {
               {["Deterministic", "Trustless", "No Oracles", "Onchain"].map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 font-mono text-xs text-zinc-500 dark:border-zinc-800 dark:bg-surface-2 dark:text-zinc-500"
+                  className="rounded-md border border-zinc-200 bg-zinc-100 px-3 py-1 font-mono text-xs text-zinc-500 dark:border-zinc-800 dark:bg-surface-2 dark:text-zinc-500"
                 >
                   {tag}
                 </span>
@@ -212,7 +212,7 @@ export function WhyGenLayer() {
             viewport={{ once: true }}
           >
             <TerminalWindow title="resolution_checklist.json">
-              <div className="text-zinc-500 font-mono text-sm leading-7">
+              <div className="font-mono text-sm leading-7 text-zinc-800 dark:text-zinc-500">
                 <div>{"{"}</div>
                 <JsonLine indent={1} keyName="product_live" value="true" comma />
                 <JsonLine indent={1} keyName="feature_usable" value="true" comma />
@@ -222,18 +222,18 @@ export function WhyGenLayer() {
               </div>
               <div className="mt-5 border-t border-zinc-200 pt-4 dark:border-zinc-800/60">
                 <p className="font-mono text-xs text-zinc-400 dark:text-zinc-600">
-                  <span className="text-emerald-600 dark:text-neon">// </span>
-                  All four fields must be <span className="text-emerald-600 font-semibold dark:text-neon">true</span> for
-                  a <span className="text-emerald-600 font-semibold dark:text-neon">YES</span> resolution.
+                  <span className="text-emerald-600 dark:text-emerald-400">// </span>
+                  All four fields must be <span className="font-semibold text-emerald-600 dark:text-emerald-400">true</span> for
+                  a <span className="font-semibold text-emerald-600 dark:text-emerald-400">YES</span> resolution.
                 </p>
                 <p className="mt-1 font-mono text-xs text-zinc-400 dark:text-zinc-600">
-                  <span className="text-emerald-600 dark:text-neon">// </span>
+                  <span className="text-emerald-600 dark:text-emerald-400">// </span>
                   Validators fetch live URLs and evaluate independently.
                 </p>
               </div>
             </TerminalWindow>
 
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none">
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-6 shadow-sm dark:border-zinc-800/60 dark:bg-surface-1 dark:shadow-none">
               <h3 className="mb-3 text-lg font-bold text-zinc-900 dark:text-zinc-100">
                 Live Evidence, Not Sentiment
               </h3>

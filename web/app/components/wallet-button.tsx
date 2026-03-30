@@ -12,9 +12,9 @@ export function WalletButton() {
 
   if (address) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-1 pl-3.5 h-10 dark:border-zinc-800 dark:bg-surface-2">
+      <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100 px-1 pl-3.5 h-10 dark:border-zinc-800 dark:bg-surface-2">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-50 dark:bg-neon" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-50 dark:bg-neon dark:opacity-50" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 dark:bg-neon" />
         </span>
         <span className="font-mono text-xs font-medium text-zinc-500 dark:text-zinc-400">{shortAddr(address)}</span>
@@ -32,7 +32,7 @@ export function WalletButton() {
   return (
     <div className="flex items-center gap-2">
       <button
-        className="flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-5 text-sm font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed dark:border-neon/20 dark:bg-neon/5 dark:text-neon dark:hover:bg-neon/10 dark:hover:border-neon/40 dark:hover:shadow-[0_0_20px_rgba(57,255,20,0.15)]"
+        className="flex h-10 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-5 text-sm font-semibold text-emerald-700 transition-all hover:bg-emerald-100 hover:border-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/15 dark:hover:border-emerald-500/50 dark:hover:shadow-[0_0_20px_rgba(57,255,20,0.15)]"
         disabled={isConnecting}
         onClick={() => void connect()}
         type="button"
