@@ -19,6 +19,8 @@ import {
   Shield,
 } from "lucide-react";
 import { useWallet } from "../../lib/wallet-context";
+import { CalldataAddress } from "genlayer-js/types";
+import { fromHex } from "viem";
 
 /* ── Types ────────────────────────────────────────────────── */
 
@@ -241,6 +243,10 @@ function extractMarketIds(v: unknown): string[] {
   );
 }
 
+function toCalldataAddress(hex: string): CalldataAddress {
+  return new CalldataAddress(fromHex(hex as `0x${string}`, "bytes"));
+}
+
 function fmt(n: number) {
   return new Intl.NumberFormat("en-US").format(n);
 }
@@ -437,9 +443,10 @@ function MarketDetail({
       setPosLoading(true);
       setPosError("");
       try {
+        const addr = toCalldataAddress(target);
         const [p, q] = await Promise.all([
-          sdkRead("get_position", [market.market_id, target]),
-          sdkRead("quote_claim", [market.market_id, target]),
+          sdkRead("get_position", [market.market_id, addr]),
+          sdkRead("quote_claim", [market.market_id, addr]),
         ]);
         setPosition(normPosition(p));
         setClaimable(toNum(q));
