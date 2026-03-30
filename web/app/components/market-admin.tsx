@@ -205,8 +205,8 @@ function normPosition(v: unknown): PositionRecord {
 function sortMarkets(m: MarketRecord[]) {
   return [...m].sort(
     (a, b) =>
-      (Number(a.market_id.replace("market-", "")) || 0) -
-      (Number(b.market_id.replace("market-", "")) || 0),
+      (Number(b.market_id.replace("market-", "")) || 0) -
+      (Number(a.market_id.replace("market-", "")) || 0),
   );
 }
 
