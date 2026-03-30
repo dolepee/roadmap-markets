@@ -89,6 +89,7 @@ const CHECKLIST: Array<{ key: keyof Checklist; label: string }> = [
 ];
 
 const TX_STEPS = ["Submitted", "Proposing", "Accepted", "Finalized"];
+const VALID_MARKET_ID = /^market-[1-9]\d*$/;
 
 const STATUS_MAP: Record<number, TxStatus> = {
   0: "PENDING",
@@ -207,6 +208,36 @@ function sortMarkets(m: MarketRecord[]) {
     (a, b) =>
       (Number(b.market_id.replace("market-", "")) || 0) -
       (Number(a.market_id.replace("market-", "")) || 0),
+  );
+}
+
+function normalizeMarketId(v: unknown): string | null {
+  const id = String(v ?? "").trim();
+  return VALID_MARKET_ID.test(id) ? id : null;
+}
+
+function extractMarketIds(v: unknown): string[] {
+  let raw: unknown[] = [];
+
+  if (v instanceof Map) raw = Array.from(v.values());
+  else if (Array.isArray(v)) raw = v;
+  else if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) raw = parsed;
+    } catch {
+      raw = [v];
+    }
+  } else if (v && typeof v === "object") {
+    raw = Object.values(v as Record<string, unknown>);
+  }
+
+  return Array.from(
+    new Set(
+      raw
+        .map(normalizeMarketId)
+        .filter((id): id is string => Boolean(id)),
+    ),
   );
 }
 
@@ -1234,48 +1265,83 @@ export function MarketBoard() {
     setLoading(true);
     setError("");
     try {
-      let ids: string[] = [];
-      for (let i = 0; i < 3; i++) {
-        try {
-          const res = await client.readContract({
-            address: CONTRACT,
-            functionName: "get_market_ids",
-            args: [],
-          });
-          if (res instanceof Map) ids = Array.from(res.values()).map(String);
-          else if (Array.isArray(res)) ids = res.map(String);
-          else if (typeof res === "string") {
-            try {
-              const p = JSON.parse(res);
-              if (Array.isArray(p)) ids = p.map(String);
-            } catch {}
+      const readWithRetry = async (
+        fn: () => Promise<unknown>,
+        label: string,
+        attempts = 5,
+      ) => {
+        for (let i = 0; i < attempts; i++) {
+          try {
+            return await fn();
+          } catch (err) {
+            if (i === attempts - 1) {
+              throw new Error(
+                err instanceof Error ? err.message : `Failed to load ${label}`,
+              );
+            }
+            await sleep(1000 + i * 500);
           }
-          break;
-        } catch {
-          if (i === 2) throw new Error("Failed to load market list");
-          await sleep(1500);
         }
-      }
-      const all = await Promise.all(
+        throw new Error(`Failed to load ${label}`);
+      };
+
+      const ids = extractMarketIds(
+        await readWithRetry(
+          () =>
+            client.readContract({
+              address: CONTRACT,
+              functionName: "get_market_ids",
+              args: [],
+            }),
+          "market list",
+        ),
+      );
+
+      const settled = await Promise.allSettled(
         ids.map(async (id) => {
-          for (let i = 0; i < 3; i++) {
-            try {
-              return normMarket(
-                await client.readContract({
+          const market = normMarket(
+            await readWithRetry(
+              () =>
+                client.readContract({
                   address: CONTRACT,
                   functionName: "get_market",
                   args: [id],
                 }),
-              );
-            } catch {
-              if (i === 2) throw new Error(`Failed to load ${id}`);
-              await sleep(1500);
-            }
-          }
-          throw new Error("unreachable");
+              id,
+            ),
+          );
+
+          return {
+            ...market,
+            market_id: normalizeMarketId(market.market_id) ?? id,
+          };
         }),
       );
-      setMarkets(sortMarkets(all));
+
+      const nextMarkets = settled.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
+      );
+      const failedIds = settled.flatMap((result, index) =>
+        result.status === "rejected" ? [ids[index]] : [],
+      );
+
+      if (nextMarkets.length === 0 && ids.length > 0) {
+        throw new Error(
+          failedIds.length > 0
+            ? `Failed to load markets: ${failedIds.join(", ")}`
+            : "Failed to load market list",
+        );
+      }
+
+      setMarkets((prev) =>
+        nextMarkets.length > 0 ? sortMarkets(nextMarkets) : prev,
+      );
+
+      if (failedIds.length > 0) {
+        setError(
+          `Some markets failed to load (${failedIds.join(", ")}). Refresh may fill the gaps.`,
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
