@@ -119,7 +119,7 @@ function resolveStatus(tx: Record<string, unknown>): TxStatus {
 }
 
 const CONTRACT = (process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ??
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  "0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4") as `0x${string}`;
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
