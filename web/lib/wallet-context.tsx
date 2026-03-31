@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { createClient } from "genlayer-js";
-import { studionet } from "genlayer-js/chains";
+import { testnetBradbury } from "genlayer-js/chains";
 
 type Address = `0x${string}`;
 
@@ -32,9 +32,9 @@ interface WalletState {
   disconnect: () => void;
 }
 
-const CHAIN_ID_HEX = "0xF22F"; // 61999
+const CHAIN_ID_HEX = "0x107D"; // 4221 (Bradbury)
 
-const anonClient = createClient({ chain: studionet });
+const anonClient = createClient({ chain: testnetBradbury });
 
 const WalletContext = createContext<WalletState>({
   address: null,
@@ -65,10 +65,10 @@ async function ensureGenLayerChain(provider: EthereumProvider): Promise<void> {
         params: [
           {
             chainId: CHAIN_ID_HEX,
-            chainName: "GenLayer Studio",
+            chainName: "GenLayer Bradbury Testnet",
             nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
-            rpcUrls: ["https://studio.genlayer.com/api"],
-            blockExplorerUrls: [],
+            rpcUrls: ["https://rpc-bradbury.genlayer.com"],
+            blockExplorerUrls: ["https://explorer-bradbury.genlayer.com"],
           },
         ],
       });
@@ -85,7 +85,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const client = useMemo(() => {
     if (!address) return anonClient;
-    return createClient({ chain: studionet, account: address });
+    return createClient({ chain: testnetBradbury, account: address });
   }, [address]);
 
   const connect = useCallback(async () => {

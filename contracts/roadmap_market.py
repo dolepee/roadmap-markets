@@ -121,7 +121,7 @@ class RoadmapMarket(gl.Contract):
     owner: Address
     next_market_id: u256
     protocol_fee_balance: u256
-    market_ids: DynArray[str]
+    market_id_index: TreeMap[u256, str]
     markets: TreeMap[str, MarketRecord]
     positions: TreeMap[str, PositionRecord]
 
@@ -142,7 +142,7 @@ class RoadmapMarket(gl.Contract):
         repo_url: str,
         chain_url: str,
         fee_bps: int,
-    ) -> str:
+    ) -> None:
         if fee_bps < 0 or fee_bps > 1_000:
             raise Exception("fee_bps must be between 0 and 1000")
 
@@ -158,7 +158,8 @@ class RoadmapMarket(gl.Contract):
         if not normalized_deadline_text:
             raise Exception("deadline_text is required")
 
-        market_id = f"market-{int(self.next_market_id)}"
+        market_number = int(self.next_market_id)
+        market_id = f"market-{market_number}"
         normalized_question = normalized_question or build_market_question(
             normalized_project_name,
             normalized_milestone_text,
@@ -182,23 +183,22 @@ class RoadmapMarket(gl.Contract):
             checklist_json="",
             notes="",
             creator=gl.message.sender_address,
-            resolved_by=Address("0x0000000000000000000000000000000000000000"),
+            resolved_by=gl.message.sender_address,
             fee_amount=u256(0),
         )
-        self.market_ids.append(market_id)
-        self.next_market_id = u256(int(self.next_market_id) + 1)
-        return market_id
+        self.market_id_index[u256(market_number)] = market_id
+        self.next_market_id = u256(market_number + 1)
 
     @gl.public.write
-    def buy_yes(self, market_id: str, amount: int) -> u256:
-        return self._buy_position(market_id, "YES", amount)
+    def buy_yes(self, market_id: str, amount: int) -> None:
+        self._buy_position(market_id, "YES", amount)
 
     @gl.public.write
-    def buy_no(self, market_id: str, amount: int) -> u256:
-        return self._buy_position(market_id, "NO", amount)
+    def buy_no(self, market_id: str, amount: int) -> None:
+        self._buy_position(market_id, "NO", amount)
 
     @gl.public.write
-    def resolve_market(self, market_id: str) -> str:
+    def resolve_market(self, market_id: str) -> None:
         market = self._require_market(market_id)
         if market.resolved:
             raise Exception("market already resolved")
@@ -287,10 +287,9 @@ class RoadmapMarket(gl.Contract):
         )
         self.protocol_fee_balance = u256(int(self.protocol_fee_balance) + int(market.fee_amount))
         self.markets[market_id] = market
-        return market.resolution
 
     @gl.public.write
-    def claim(self, market_id: str) -> u256:
+    def claim(self, market_id: str) -> None:
         market = self._require_market(market_id)
         if not market.resolved:
             raise Exception("market not resolved")
@@ -314,17 +313,15 @@ class RoadmapMarket(gl.Contract):
 
         position.claimed = True
         self.positions[key] = position
-        return u256(payout)
 
     @gl.public.write
-    def withdraw_protocol_fees(self, amount: int) -> u256:
+    def withdraw_protocol_fees(self, amount: int) -> None:
         if gl.message.sender_address != self.owner:
             raise Exception("only owner")
         if amount < 0 or amount > int(self.protocol_fee_balance):
             raise Exception("invalid amount")
 
         self.protocol_fee_balance = u256(int(self.protocol_fee_balance) - amount)
-        return u256(amount)
 
     @gl.public.view
     def get_market(self, market_id: str) -> str:
@@ -338,8 +335,11 @@ class RoadmapMarket(gl.Contract):
         return build_position_snapshot(position)
 
     @gl.public.view
-    def get_market_ids(self) -> DynArray[str]:
-        return self.market_ids
+    def get_market_ids(self) -> list[str]:
+        market_ids: list[str] = []
+        for index in range(1, int(self.next_market_id)):
+            market_ids.append(self.market_id_index[u256(index)])
+        return market_ids
 
     @gl.public.view
     def quote_claim(self, market_id: str, trader_address: Address) -> u256:
@@ -360,7 +360,7 @@ class RoadmapMarket(gl.Contract):
             )
         )
 
-    def _buy_position(self, market_id: str, side: str, amount: int) -> u256:
+    def _buy_position(self, market_id: str, side: str, amount: int) -> None:
         market = self._require_market(market_id)
         if market.resolved:
             raise Exception("market already resolved")
@@ -380,7 +380,6 @@ class RoadmapMarket(gl.Contract):
 
         self.markets[market_id] = market
         self.positions[key] = position
-        return u256(amount)
 
     def _require_market(self, market_id: str) -> MarketRecord:
         if market_id not in self.markets:

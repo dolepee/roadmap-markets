@@ -2,6 +2,13 @@
 
 GenLayer-native markets for trading whether crypto teams actually ship roadmap milestones.
 
+Current network target:
+
+- GenLayer Bradbury testnet
+- live contract: `0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4`
+- deploy tx: `0xf18ba5e0f7560a724f7254411cbcbca5f3576c808da8cfe95df727d613163abd`
+- live proof: [runtime/bradbury-proof.json](./runtime/bradbury-proof.json)
+
 Current build status:
 
 - contract core implemented
@@ -9,9 +16,9 @@ Current build status:
 - standalone contract bundler added
 - direct tests for resolution and payout math added
 - minimal web shell added and verified with Next production build
-- deployed to GenLayer Studio
-- live `YES` and `NO` resolution proof captured in [runtime/studionet-proof.json](./runtime/studionet-proof.json)
-- live claim flow proven on Studio
+- deployed to GenLayer Bradbury
+- live Bradbury market creation proof captured in [runtime/bradbury-proof.json](./runtime/bradbury-proof.json)
+- earlier Studio resolution/claim proof retained in [runtime/studionet-proof.json](./runtime/studionet-proof.json)
 
 Current MVP shape:
 
@@ -25,7 +32,7 @@ Current MVP shape:
 Wallet integration:
 
 - frontend uses `genlayer-js` (v0.27.3) built on viem for client-side contract interaction
-- MetaMask connects to GenLayer Studio chain (chain ID 61999)
+- MetaMask connects to GenLayer Bradbury chain (chain ID 4221 / `0x107D`)
 - reads work without a wallet; writes require wallet connection
 - each user's positions are attributed to their own wallet address via `gl.message.sender_address`
 
@@ -65,14 +72,24 @@ Write-path hardening:
   - `ROADMAP_MARKETS_SIGNER_LOCK`
   - `ROADMAP_MARKETS_SIGNER_LOCK_TIMEOUT`
 
-Live Studio proof:
+Live Bradbury proof:
 
-- current Studio deployment: `0xC8F8B0F33054002cb7C186de1C8F97e2Aa19b0D6`
+- current Bradbury deployment: `0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4`
+- deploy tx: `0xf18ba5e0f7560a724f7254411cbcbca5f3576c808da8cfe95df727d613163abd`
+- current visible markets:
+  - `market-1` `Roadmap Markets`
+  - `market-2` `Ethereum Glamsterdam`
+  - `market-3` `Solana Alpenglow`
+  - `market-4` `Aave V4`
+- note: Bradbury RPC is still flaky enough that some write commands return receipt-polling errors after the transaction has already reached `ACCEPTED`; the proof file records the tx hashes plus the read-back market snapshots that confirm final market visibility
+
+Archived Studio resolution proof:
+
+- Studio deployment: `0xC8F8B0F33054002cb7C186de1C8F97e2Aa19b0D6`
 - deploy tx: `0x3b0ae5dee4f64315bdbe70f29e7457b9166df5d75e4daac9daa817008670fb92`
 - `market-1` resolved `YES` with full checklist agreement and a successful claim for `198`
 - `market-2` resolved `NO` with full checklist agreement and a quoted payout of `179`
 - evidence pages are fixed public fixtures served from jsDelivr at fixture commit `628fa3e0d9c50c1f34230703696602b728c94c1f`
-- note: the canonical `market-1` `buy_yes` transaction landed during an earlier Studio RPC timeout; the new proof manifest records the confirmed market and position state even though that single tx hash was not recovered locally
 
 Backend hardening proof:
 

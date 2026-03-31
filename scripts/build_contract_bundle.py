@@ -1,30 +1,14 @@
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = ROOT / "contracts" / "roadmap_market.py"
 UTILS = ROOT / "contracts" / "roadmap_market_utils.py"
-OUTPUT = ROOT / "contracts" / "roadmap_market_standalone.py"
-
-HEADER = [
-    '# { "Depends": "py-genlayer:test" }',
-    "",
-    "from __future__ import annotations",
-    "",
-    "from dataclasses import dataclass",
-    "from hashlib import sha256",
-    "from html import unescape",
-    "from html.parser import HTMLParser",
-    "import json",
-    "import typing",
-    "from typing import Any",
-    "from urllib.parse import urlparse",
-    "",
-    "from genlayer import *",
-    "",
-]
+DEFAULT_OUTPUT = ROOT / "contracts" / "roadmap_market_standalone.py"
+DEFAULT_DEPENDS = "py-genlayer:test"
 
 SKIP_LINES = {
     "from __future__ import annotations",
@@ -63,8 +47,28 @@ def strip_module(lines: list[str]) -> list[str]:
     return stripped
 
 
-def build_bundle() -> str:
-    bundled = HEADER + strip_module(UTILS.read_text().splitlines()) + [""] + strip_module(
+def build_header(depends: str) -> list[str]:
+    return [
+        f'# {{ "Depends": "{depends}" }}',
+        "",
+        "from __future__ import annotations",
+        "",
+        "from dataclasses import dataclass",
+        "from hashlib import sha256",
+        "from html import unescape",
+        "from html.parser import HTMLParser",
+        "import json",
+        "import typing",
+        "from typing import Any",
+        "from urllib.parse import urlparse",
+        "",
+        "from genlayer import *",
+        "",
+    ]
+
+
+def build_bundle(depends: str = DEFAULT_DEPENDS) -> str:
+    bundled = build_header(depends) + strip_module(UTILS.read_text().splitlines()) + [""] + strip_module(
         CONTRACT.read_text().splitlines()
     )
 
@@ -82,9 +86,18 @@ def build_bundle() -> str:
     return "\n".join(cleaned).rstrip() + "\n"
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--depends", default=DEFAULT_DEPENDS)
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
+    return parser.parse_args()
+
+
 def main() -> None:
-    OUTPUT.write_text(build_bundle())
-    print(f"Wrote {OUTPUT}")
+    args = parse_args()
+    output = Path(args.output)
+    output.write_text(build_bundle(args.depends))
+    print(f"Wrote {output}")
 
 
 if __name__ == "__main__":
