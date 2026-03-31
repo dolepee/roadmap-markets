@@ -726,16 +726,19 @@ function MarketDetail({
                     </div>
                     {(market.resolved || !market.resolved) && (
                       <div className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800">
-                        {!market.resolved && (
-                          <button
-                            className="flex-1 rounded-lg bg-amber-100 py-2.5 font-mono text-xs font-bold text-amber-700 transition-colors hover:bg-amber-200 disabled:opacity-30 dark:bg-amber-dim dark:text-amber dark:hover:bg-amber/20"
-                            disabled={isPending}
-                            onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
-                            type="button"
-                          >
-                            Resolve
-                          </button>
-                        )}
+                        {!market.resolved && (() => {
+                          const isCreator = address && market.creator.toLowerCase() === address.toLowerCase();
+                          return (
+                            <button
+                              className="flex-1 rounded-lg bg-amber-100 py-2.5 font-mono text-xs font-bold text-amber-700 transition-colors hover:bg-amber-200 disabled:opacity-30 dark:bg-amber-dim dark:text-amber dark:hover:bg-amber/20"
+                              disabled={isPending || !isCreator}
+                              onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
+                              type="button"
+                            >
+                              {isCreator ? "Resolve" : "Creator Only"}
+                            </button>
+                          );
+                        })()}
                         {market.resolved && (() => {
                           const hasPosition = position && (position.yes_amount > 0 || position.no_amount > 0);
                           const canClaim = hasPosition && claimable > 0 && !position?.claimed;
