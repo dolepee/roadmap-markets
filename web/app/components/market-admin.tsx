@@ -1085,95 +1085,47 @@ export function MarketBoard() {
     setLoading(true);
     setError("");
     try {
-      const readWithRetry = async (
-        fn: () => Promise<unknown>,
-        label: string,
-        attempts = 8,
-      ) => {
-        for (let i = 0; i < attempts; i++) {
-          try {
-            return await fn();
-          } catch (err) {
-            if (i === attempts - 1) {
-              throw new Error(
-                err instanceof Error ? err.message : `Failed to load ${label}`,
-              );
-            }
-            await sleep(1500 + i * 1000);
-          }
-        }
-        throw new Error(`Failed to load ${label}`);
+      const response = await fetch("/api/markets", { cache: "no-store" });
+      const payload = (await response.json()) as {
+        error?: string;
+        ids?: unknown;
+        markets?: unknown[];
       };
 
-      const ids = extractMarketIds(
-        await readWithRetry(
-          () =>
-            client.readContract({
-              address: CONTRACT,
-              functionName: "get_market_ids",
-              args: [],
-            }),
-          "market list",
-        ),
-      );
-
-      // Fetch in batches of 3 to avoid overwhelming the RPC
-      const BATCH = 3;
-      const settled: PromiseSettledResult<MarketRecord>[] = [];
-      for (let b = 0; b < ids.length; b += BATCH) {
-        const batch = ids.slice(b, b + BATCH);
-        const results = await Promise.allSettled(
-          batch.map(async (id) => {
-            const market = normMarket(
-              await readWithRetry(
-                () =>
-                  client.readContract({
-                    address: CONTRACT,
-                    functionName: "get_market",
-                    args: [id],
-                  }),
-                id,
-              ),
-            );
-            return {
-              ...market,
-              market_id: normalizeMarketId(market.market_id) ?? id,
-            };
-          }),
-        );
-        settled.push(...results);
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load market list");
       }
 
-      const nextMarkets = settled.flatMap((result) =>
-        result.status === "fulfilled" ? [result.value] : [],
-      );
-      const failedIds = settled.flatMap((result, index) =>
-        result.status === "rejected" ? [ids[index]] : [],
-      );
+      const ids = extractMarketIds(payload.ids ?? []);
+      const nextMarkets = (payload.markets ?? []).map((entry, index) => {
+        const market = normMarket(entry);
+        return {
+          ...market,
+          market_id: normalizeMarketId(market.market_id) ?? ids[index] ?? market.market_id,
+        };
+      });
 
       if (nextMarkets.length === 0 && ids.length > 0) {
-        throw new Error(
-          failedIds.length > 0
-            ? `Failed to load markets: ${failedIds.join(", ")}`
-            : "Failed to load market list",
-        );
+        throw new Error(`Failed to load markets: ${ids.join(", ")}`);
       }
 
-      setMarkets((prev) =>
-        nextMarkets.length > 0 ? sortMarkets(nextMarkets) : prev,
-      );
+      setMarkets((prev) => (nextMarkets.length > 0 ? sortMarkets(nextMarkets) : prev));
 
-      if (failedIds.length > 0) {
-        setError(
-          `Some markets failed to load (${failedIds.join(", ")}). Refresh may fill the gaps.`,
-        );
+      if (nextMarkets.length < ids.length) {
+        const loaded = new Set(nextMarkets.map((market) => market.market_id));
+        const failedIds = ids.filter((id) => !loaded.has(id));
+        if (failedIds.length > 0) {
+          setError(
+            `Some markets failed to load (${failedIds.join(", ")}). Refresh may fill the gaps.`,
+          );
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
       setLoading(false);
     }
-  }, [client]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -1237,7 +1189,7 @@ export function MarketBoard() {
           <p className="mt-1 font-mono text-xs text-zinc-400 dark:text-zinc-600">
             {loading
               ? "Loading live state..."
-              : `${markets.length} markets on GenLayer Studio`}
+              : `${markets.length} markets on GenLayer Bradbury`}
           </p>
         </div>
         <div className="flex items-center gap-2">
