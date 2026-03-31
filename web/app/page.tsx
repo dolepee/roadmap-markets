@@ -4,7 +4,7 @@ import { Hero } from "./components/hero";
 import { HowItWorks, WhyGenLayer } from "./components/market-console";
 
 const CONTRACT =
-  process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ??
+  process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS?.trim() ??
   "0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4";
 
 function shortContract(addr: string) {

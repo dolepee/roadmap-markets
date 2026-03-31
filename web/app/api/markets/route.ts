@@ -3,8 +3,10 @@ import { createClient } from "genlayer-js";
 import { testnetBradbury } from "genlayer-js/chains";
 
 const DEFAULT_CONTRACT = "0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4" as const;
-const CONTRACT = (process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ||
-  DEFAULT_CONTRACT) as `0x${string}`;
+const configuredContract = process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS?.trim();
+const CONTRACT = (/^0x[a-fA-F0-9]{40}$/.test(configuredContract ?? "")
+  ? configuredContract
+  : DEFAULT_CONTRACT) as `0x${string}`;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,13 +28,6 @@ async function readWithRetry<T>(fn: () => Promise<T>, attempts = 6): Promise<T> 
 }
 
 export async function GET() {
-  if (!/^0x[a-fA-F0-9]{40}$/.test(CONTRACT)) {
-    return NextResponse.json(
-      { error: "Roadmap Market contract address is not configured." },
-      { status: 500 },
-    );
-  }
-
   const client = createClient({ chain: testnetBradbury });
 
   try {

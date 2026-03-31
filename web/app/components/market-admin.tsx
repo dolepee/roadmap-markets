@@ -118,8 +118,8 @@ function resolveStatus(tx: Record<string, unknown>): TxStatus {
   return "PENDING";
 }
 
-const CONTRACT = (process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS ??
-  "0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4") as `0x${string}`;
+const CONTRACT = ((process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS?.trim() ||
+  "0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4")) as `0x${string}`;
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
