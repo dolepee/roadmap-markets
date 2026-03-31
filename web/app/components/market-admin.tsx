@@ -724,36 +724,34 @@ function MarketDetail({
                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <>NO {100 - yPct}%</>}
                       </button>
                     </div>
-                    {(() => {
-                      const hasPosition = position && (position.yes_amount > 0 || position.no_amount > 0);
-                      const showResolve = !market.resolved;
-                      const showClaim = market.resolved && hasPosition && claimable > 0;
-                      if (!showResolve && !showClaim) return null;
-                      return (
-                        <div className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800">
-                          {showResolve && (
-                            <button
-                              className="flex-1 rounded-lg bg-amber-100 py-2.5 font-mono text-xs font-bold text-amber-700 transition-colors hover:bg-amber-200 disabled:opacity-30 dark:bg-amber-dim dark:text-amber dark:hover:bg-amber/20"
-                              disabled={isPending}
-                              onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
-                              type="button"
-                            >
-                              Resolve
-                            </button>
-                          )}
-                          {showClaim && (
+                    {(market.resolved || !market.resolved) && (
+                      <div className="flex gap-2 border-t border-zinc-200 p-3 dark:border-zinc-800">
+                        {!market.resolved && (
+                          <button
+                            className="flex-1 rounded-lg bg-amber-100 py-2.5 font-mono text-xs font-bold text-amber-700 transition-colors hover:bg-amber-200 disabled:opacity-30 dark:bg-amber-dim dark:text-amber dark:hover:bg-amber/20"
+                            disabled={isPending}
+                            onClick={() => doWrite("resolve_market", [market.market_id], "Resolve Market")}
+                            type="button"
+                          >
+                            Resolve
+                          </button>
+                        )}
+                        {market.resolved && (() => {
+                          const hasPosition = position && (position.yes_amount > 0 || position.no_amount > 0);
+                          const canClaim = hasPosition && claimable > 0 && !position?.claimed;
+                          return (
                             <button
                               className="flex-1 rounded-lg bg-sky-100 py-2.5 font-mono text-xs font-bold text-sky-700 transition-colors hover:bg-sky-200 disabled:opacity-30 dark:bg-cyan-dim dark:text-cyan dark:hover:bg-cyan/20"
-                              disabled={isPending || Boolean(position?.claimed)}
+                              disabled={isPending || !canClaim}
                               onClick={() => doWrite("claim", [market.market_id], "Claim Winnings")}
                               type="button"
                             >
-                              {position?.claimed ? "Claimed" : "Claim Winnings"}
+                              {position?.claimed ? "Claimed" : !hasPosition ? "No Position" : claimable <= 0 ? "Nothing to Claim" : "Claim Winnings"}
                             </button>
-                          )}
-                        </div>
-                      );
-                    })()}
+                          );
+                        })()}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
