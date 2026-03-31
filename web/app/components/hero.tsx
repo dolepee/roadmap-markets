@@ -85,22 +85,6 @@ export function Hero() {
             How It Works
           </a>
         </motion.div>
-
-        {/* Terminal line — clean light / glowing cypherpunk dark */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mx-auto mt-14 max-w-lg rounded-lg border border-zinc-300 bg-zinc-100 px-5 py-3 font-mono shadow-sm dark:border-emerald-500/30 dark:bg-black/50 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-        >
-          <p className="font-mono text-xs text-zinc-500 dark:text-zinc-500">
-            <span className="text-emerald-600 dark:text-emerald-400">$</span>{" "}
-            <span className="text-zinc-800 dark:text-zinc-300">genlayer resolve</span>{" "}
-            <span className="text-sky-600 dark:text-cyan">--market</span>{" "}
-            <span className="text-zinc-800 dark:text-emerald-400">ETH-PECTRA-Q2</span>{" "}
-            <span className="text-zinc-400 dark:text-zinc-600">// deterministic, trustless</span>
-          </p>
-        </motion.div>
       </div>
     </section>
   );
