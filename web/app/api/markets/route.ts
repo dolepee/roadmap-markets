@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 
-const DEFAULT_CONTRACT = "0xf6a76a9dCa4E05D1a198d6bF13e0C19B69E0919F" as const;
+const DEFAULT_CONTRACT = "0x63061A4ba7343E925cC34DAc70F8961c524a893D" as const;
 const configuredContract = process.env.NEXT_PUBLIC_ROADMAP_MARKET_ADDRESS?.trim();
 const CONTRACT = (/^0x[a-fA-F0-9]{40}$/.test(configuredContract ?? "")
   ? configuredContract
