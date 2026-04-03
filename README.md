@@ -2,20 +2,19 @@
 
 Trade whether crypto teams actually ship roadmap milestones.
 
-Roadmap Markets is a GenLayer-native prediction market for subjective delivery questions that normal oracle markets handle badly. Instead of resolving only objective events like price or block height, this contract resolves questions such as:
+Roadmap Markets is a GenLayer native prediction market for subjective delivery questions that normal oracle markets handle badly. Instead of resolving only objective events like price or block height, this contract resolves questions such as:
 
-- Did a team actually ship the promised feature?
-- Is the product live and usable, not just announced?
-- Do docs, repo activity, and public chain evidence support the launch claim?
+1. Did a team actually ship the promised feature?
+2. Is the product live and usable, not just announced?
+3. Do docs, repo activity, and public chain evidence support the launch claim?
 
-GenLayer is the core of the product, not a bolt-on. At resolution time, validators fetch live public evidence, run the same checklist, and settle the market when the checklist output agrees.
+GenLayer is the core of the product, not a bolt on. At resolution time, validators fetch live public evidence, run the same checklist, and settle the market when the checklist output agrees.
 
 ## Links
 
-- Live app: `https://roadmap-markets.vercel.app`
-- GitHub: `https://github.com/dolepee/roadmap-markets`
-- Bradbury proof: [runtime/bradbury-proof.json](./runtime/bradbury-proof.json)
-- Archived Studio proof: [runtime/studionet-proof.json](./runtime/studionet-proof.json)
+Live app: https://roadmap-markets.vercel.app
+
+GitHub: https://github.com/dolepee/roadmap-markets
 
 ## Why GenLayer
 
@@ -23,104 +22,86 @@ This product needs three things that conventional prediction market stacks do no
 
 1. Live web evidence at resolution time
 2. Subjective evaluation of whether a milestone was meaningfully delivered
-3. Appeal-friendly consensus instead of one manual committee or one oracle feed
+3. Appeal friendly consensus instead of one manual committee or one oracle feed
 
-Resolution uses a deterministic four-field checklist:
+Resolution uses a deterministic four field checklist:
 
-- `product_live`
-- `feature_usable`
-- `docs_or_changelog_live`
-- `repo_or_chain_evidence`
+`product_live`, `feature_usable`, `docs_or_changelog_live`, `repo_or_chain_evidence`
 
 If validators independently produce the same checklist booleans, the market settles. That is the core mechanism.
 
 ## Current Network
 
-- Network: GenLayer Bradbury testnet
-- Live contract: `0x233fd4Ac6670663e9725B1A7E3dCeD29FA96eCa4`
-- Deploy tx: `0xf18ba5e0f7560a724f7254411cbcbca5f3576c808da8cfe95df727d613163abd`
+Network: GenLayer Studionet (chain ID 61999)
 
-## Live Bradbury Markets
+Live contract: `0x63061A4ba7343E925cC34DAc70F8961c524a893D`
 
-- `market-1` Roadmap Markets demo
-- `market-2` Ethereum Glamsterdam
-- `market-3` Solana Alpenglow
-- `market-4` Aave V4
+RPC: `https://studio.genlayer.com/api`
 
-The current proof file records the exact create tx hashes and read-back market snapshots:
+## Live Markets
 
-- [runtime/bradbury-proof.json](./runtime/bradbury-proof.json)
+1. **Ethereum Pectra** Will the Ethereum Pectra upgrade be activated on Mainnet before June 2025?
+2. **Monad Mainnet** Will Monad launch its mainnet by Q4 2025?
+3. **Aave V4** Will Aave launch V4 on Ethereum mainnet by Q2 2026?
+4. **Solana Firedancer** Will Solana ship the Firedancer validator client to mainnet by Q3 2025?
 
 ## Product Scope
 
 Current MVP:
 
-- one market type: `ship_by_date`
-- `YES / NO` positions
-- MetaMask wallet flow via `genlayer-js`
-- GenLayer-based milestone resolution from live evidence
-- credit-based internal position accounting
+1. One market type: `ship_by_date`
+2. YES / NO positions
+3. MetaMask wallet flow via `genlayer-js`
+4. GenLayer based milestone resolution from live evidence
+5. Credit based internal position accounting
 
-Current limitation:
+Current limitations:
 
-- positions are credit-based, not native-GEN collateralized
-- deadline text is stored and shown, but not enforced by onchain timestamp gating yet
-- Bradbury RPC is flaky enough that some writes reach `ACCEPTED` before the CLI receipt polling finishes
-
-That last point is handled in the proof files by recording both the tx hash and the read-back contract state.
+1. Positions are credit based, not native GEN collateralized
+2. Deadline text is stored and shown, but not enforced by onchain timestamp gating yet
 
 ## Contract Files
 
-- [contracts/roadmap_market.py](./contracts/roadmap_market.py)
-- [contracts/roadmap_market_utils.py](./contracts/roadmap_market_utils.py)
-- [contracts/roadmap_market_standalone.py](./contracts/roadmap_market_standalone.py)
-- [contracts/roadmap_market_bradbury.py](./contracts/roadmap_market_bradbury.py)
+[contracts/roadmap_market.py](./contracts/roadmap_market.py)
+
+[contracts/roadmap_market_utils.py](./contracts/roadmap_market_utils.py)
+
+[contracts/roadmap_market_standalone.py](./contracts/roadmap_market_standalone.py)
 
 ## Tests
 
-- [tests/direct/test_roadmap_market_utils.py](./tests/direct/test_roadmap_market_utils.py)
-- [tests/direct/test_build_contract_bundle.py](./tests/direct/test_build_contract_bundle.py)
+[tests/direct/test_roadmap_market_utils.py](./tests/direct/test_roadmap_market_utils.py)
+
+[tests/direct/test_build_contract_bundle.py](./tests/direct/test_build_contract_bundle.py)
 
 Run locally:
 
 ```bash
-cd /home/qdee/roadmap-markets
 uv run pytest tests/direct
-
-cd /home/qdee/roadmap-markets/web
-npm run build
+cd web && npm run build
 ```
 
 ## Frontend
 
-The live app uses:
-
-- client-side wallet connection and writes through `genlayer-js`
-- a server-side `/api/markets` read route for stable Bradbury market-board reads on Vercel
+The live app uses client side wallet connection and writes through `genlayer-js`, plus a server side `/api/markets` read route for stable market board reads on Vercel.
 
 Key files:
 
-- [web/app/page.tsx](./web/app/page.tsx)
-- [web/app/components/hero.tsx](./web/app/components/hero.tsx)
-- [web/app/components/market-admin.tsx](./web/app/components/market-admin.tsx)
-- [web/app/api/markets/route.ts](./web/app/api/markets/route.ts)
-- [web/lib/wallet-context.tsx](./web/lib/wallet-context.tsx)
+[web/app/page.tsx](./web/app/page.tsx)
 
-## Demo Notes
+[web/app/components/hero.tsx](./web/app/components/hero.tsx)
 
-For the demo, the safest flow is:
+[web/app/components/market-admin.tsx](./web/app/components/market-admin.tsx)
 
-1. show the live market board with the four seeded markets
-2. connect wallet
-3. open a market detail panel
-4. show the evidence links and checklist model
-5. do one controlled live write at most
-6. confirm state by refresh/read, not by assuming instant finality
+[web/app/api/markets/route.ts](./web/app/api/markets/route.ts)
 
-There is a short demo script here:
+[web/lib/wallet-context.tsx](./web/lib/wallet-context.tsx)
 
-- [submission/DEMO_SCRIPT.md](./submission/DEMO_SCRIPT.md)
+## Demo Flow
 
-There is also a paste-ready submission summary here:
-
-- [submission/DORAHACKS_COPY.md](./submission/DORAHACKS_COPY.md)
+1. Show the live market board with the four seeded markets
+2. Connect wallet via MetaMask
+3. Open a market detail panel
+4. Show the evidence links and checklist model
+5. Buy a YES or NO position on a market
+6. Confirm state by refresh
